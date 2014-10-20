@@ -42,10 +42,23 @@ convert(element(script, Args, [C0]),
 	string_concat(C2, "\n", C).
 convert(element(head, Args, C0),
 	element(head, Args,
-		[ element(meta, [charset='UTF-8'], [])
+		[ element(meta, [charset='UTF-8'], []),
+		  element(link, [href='lpn.css', rel=stylesheet], []),
+		  element(script, [src='jquery.min.js'], []),
+		  element(script, [src='lpn.js'], [])
 		| C
 		])) :- !,
 	convert_dom(C0, C).
+convert(element(body, Args, C0),
+	element(body, Args, C)) :- !,
+	convert_dom(C0, C1),
+	append(C1,
+	       [ element(script, [], [
+'$(function() {
+$("body").LPN();
+});
+'])
+	       ], C).
 convert(element(div, Attrs0, C0),
 	element(pre, [class=Class|Attrs], Pre)) :-
 	select(class=fancyvrb, Attrs0, Attrs),
