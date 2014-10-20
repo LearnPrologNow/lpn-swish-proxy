@@ -19,10 +19,13 @@ convert_lpn2(In, Out) :-
 		    max_errors(-1)
 		  ]),
 	convert_dom(DOM, DOM1),
-	setup_call_cleanup(
-	    open(Out, write, Stream),
-	    html_write(Stream, DOM1, []),
-	    close(Stream)).
+	(   is_stream(Out)
+	->  html_write(Out, DOM1, [])
+	;   setup_call_cleanup(
+		open(Out, write, Stream),
+		html_write(Stream, DOM1, []),
+		close(Stream))
+	).
 
 convert_dom(DOM0, DOM) :-
 	convert(DOM0, DOM), !.
