@@ -35,11 +35,6 @@ convert_dom(element(E,A,C0), element(E,A,C)) :-
 
 %%	convert(+DOM0, -DOM) is semidet.
 
-convert(element(script, Args, [C0]),
-	element(script, Args, [C])) :-
-	string_concat("<!--", C1, C0),
-	string_concat(C2, "-->", C1), !,
-	string_concat(C2, "\n", C).
 convert(element(head, Args, C0),
 	element(head, Args,
 		[ element(meta, [charset='UTF-8'], []),
