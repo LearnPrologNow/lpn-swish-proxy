@@ -2,10 +2,16 @@
 	  [ server/1
 	  ]).
 :- use_module(convert).
+:- use_module(library(option)).
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_server_files)).
 :- use_module(library(http/http_open)).
+
+/** <module> Learn Prolog Now proxy
+
+This module implements a simple proxy that rewrites LPN to link to SWISH
+*/
 
 user:file_search_path(lpn, .).
 user:file_search_path(lpn_cache, lpn(cache)).
@@ -14,6 +20,7 @@ user:file_search_path(lpn_cache, lpn(cache)).
 				   '/lpnpage.php?pageid=online'), []).
 :- http_handler('/', serve_files_in_directory(lpn), [prefix]).
 :- http_handler('/lpnpage.php', lpn, []).
+:- http_handler('/html/', pics, [prefix]).
 
 server(Port) :-
 	http_server(http_dispatch,
@@ -49,6 +56,18 @@ reply_from_file(Path) :-
 	    open(Path, read, In),
 	    reply_from_stream(In),
 	    close(In)).
+
+pics(Request) :-
+	option(path_info(Rest), Request),
+	(   absolute_file_name(lpn_cache(Rest), _,
+			       [access(read), file_errors(fail)])
+	->  http_reply_file(lpn_cache(Rest), [], Request)
+	;   absolute_file_name(lpn_cache(Rest), Path,
+			       [access(write), file_errors(fail)])
+	->  option(request_uri(URI), Request),
+	    download(URI, Path),
+	    http_reply_file(lpn_cache(Rest), [], Request)
+	).
 
 download(URI, Path) :-
 	atom_concat('http://www.learnprolognow.org', URI, Source),
