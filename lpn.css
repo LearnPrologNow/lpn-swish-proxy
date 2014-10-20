@@ -1,4 +1,5 @@
-div.source { position: relative;
+div.source {
+  position: relative;
   margin: 10px 2ex;
   border: 1px solid #888;
   background-color: #eee;
@@ -10,7 +11,7 @@ pre.source {
   width: 100%;
 }
 
-pre.query {
+pre.query, pre.nosource {
   margin: 10px 2ex;
 }
 

@@ -11,6 +11,9 @@
 :- debug(lpn).
 
 convert_lpn(In, Out) :-
+	\+ \+ convert_lpn2(In, Out).
+
+convert_lpn2(In, Out) :-
 	load_html(In, DOM,
 		  [ syntax_errors(quiet),
 		    max_errors(-1)
@@ -119,9 +122,13 @@ leading_spaces(_, N, N).
 %
 %	Try to classify the source.
 
-classify_source(C, [C], 'swish source') :-
+classify_source(C, [C], Class) :-
 	source_terms(C, Terms),
-	Terms \= [?-_|_], !.
+	Terms \= [?-_|_], !,
+	(   set_source(Terms)
+	->  Class = 'swish source'
+	;   Class = nosource
+	).
 classify_source(C, ["?- ", element(span, [class='swish query'], [QT]), AC], query) :-
 	string_codes(C, Codes),
 	phrase((whites, "?-", whites, string(S), "."), Codes, Rest),
@@ -129,6 +136,22 @@ classify_source(C, ["?- ", element(span, [class='swish query'], [QT]), AC], quer
 	catch(term_string(_T, QT0), _, fail), !,
 	string_concat(QT0, ".", QT),
 	string_codes(AC, Rest).
+
+%%	set_source(+Terms) is semidet.
+%
+%	Set our notion of the  current  source.   If  we  find  that the
+%	current element provides a sub-sequence   of the current source,
+%	we assume it is a description that  highlights a fragment and do
+%	not update our notion of the current source.
+
+set_source(Terms) :-
+	nb_current(lpn_source, Source),
+	append(Terms, _, OpenTerms),
+	append(_, OpenTerms, Source), !,
+	fail.
+set_source(Terms) :-
+	b_setval(lpn_source, Terms).
+
 
 %%	source_terms(+Text, -Terms) is semidet.
 %
