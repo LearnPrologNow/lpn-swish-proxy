@@ -55,7 +55,7 @@ convert(element(body, Args, C0),
 	append(C1,
 	       [ element(script, [], [
 '$(function() {
-$("body").LPN();
+$(".swish").LPN();
 });
 '])
 	       ], C).
@@ -124,10 +124,10 @@ leading_spaces(_, N, N).
 %
 %	Try to classify the source.
 
-classify_source(C, [C], source) :-
+classify_source(C, [C], 'swish source') :-
 	source_terms(C, Terms),
 	Terms \= [?-_|_], !.
-classify_source(C, ["?- ", element(span, [class=query], [QT]), AC], query) :-
+classify_source(C, ["?- ", element(span, [class='swish query'], [QT]), AC], query) :-
 	string_codes(C, Codes),
 	phrase((whites, "?-", whites, string(S), "."), Codes, Rest),
 	string_codes(QT0, S),

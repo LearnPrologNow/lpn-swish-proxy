@@ -10,19 +10,29 @@
 (function($) {
   var pluginName = 'LPN';
 
-  var SWISH = "http://swish.swi-prolog.org";
+  var SWISH = "http://swish.swi-prolog.org/";
+//var SWISH = "http://localhost:3050/";
 
   /** @lends $.fn.LPN */
   var methods = {
     _init: function(options) {
+      var currentSource = null;
+
       return this.each(function() {
 	var elem = $(this);
 	var data = {};			/* private data */
 
-	elem.wrap("<div class='source'></div>");
-	elem.parent()
-	  .append("<div class='load'></div>")
-	  .on("click", "div.load", loadFromLoadButton);
+	if ( elem.hasClass("source") ) {
+	  data.queries = [];
+	  currentSource = data;
+	  elem.wrap("<div class='source'></div>");
+	  elem.parent()
+	    .append("<div class='load'></div>")
+	    .on("click", "div.load", loadFromLoadButton);
+	} else if ( elem.hasClass("query") ) {
+	  if ( currentSource )
+	    currentSource.queries.push("?- ", elem.text(), "\n");
+	}
 	elem.data(pluginName, data);	/* store with element */
       });
     }
@@ -35,9 +45,15 @@
       content.push(" ", name, "='", value, "'");
     }
 
-    var source = $(this).parent().find("pre.source").text();
-    var query  = SWISH+"?code="+encodeURIComponent(source);
+    var elem    = $(this).parent().find("pre.source");
+    var data    = elem.data(pluginName);
+    var source  = elem.text();
+    var query   = SWISH+"?code="+encodeURIComponent(source);
     var content = [ "<iframe " ];
+
+    if ( data.queries.length > 0 ) {
+      query += "&examples=" + encodeURIComponent(data.queries.join(""));
+    }
 
     attr("class", "swish");
     attr("src", query);
