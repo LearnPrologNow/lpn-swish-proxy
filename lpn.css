@@ -1,12 +1,71 @@
-pre.source {
-  margin-left: 2ex;
-  width: 80%;
+div.source { position: relative;
+  margin: 10px 2ex;
   border: 1px solid #888;
   background-color: #eee;
   padding: 4px 8px;
   border-radius: 5px;
 }
 
+pre.source {
+  width: 100%;
+}
+
 pre.query {
-  margin-left: 2ex;
+  margin: 10px 2ex;
+}
+
+div.load {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 48px;
+  height: 48px;
+  background-image: url("Actions-system-run-icon.png");
+  background-repeat: none;
+  background-size: 100%;
+}
+
+		 /*******************************
+		 *	  MODAL DIALOGUE	*
+		 *******************************/
+
+* {
+	margin:0;
+	padding:0;
+}
+
+#overlay {
+	position:fixed;
+	top:0;
+	left:0;
+	width:100%;
+	height:100%;
+	background:#000;
+	opacity:0.5;
+	filter:alpha(opacity=50);
+}
+
+#modal {
+	position:absolute;
+	background:url(tint20.png) 0 0 repeat;
+	background:rgba(0,0,0,0.2);
+	border-radius:14px;
+	padding:8px;
+}
+
+#content {
+	border-radius:8px;
+	background:#fff;
+	padding:20px;
+}
+
+#close {
+	position:absolute;
+	background:url(close.png) 0 0 no-repeat;
+	width:24px;
+	height:27px;
+	display:block;
+	text-indent:-9999px;
+	top:-7px;
+	right:-7px;
 }
