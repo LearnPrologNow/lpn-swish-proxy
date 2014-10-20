@@ -1,0 +1,12 @@
+pre.source {
+  margin-left: 2ex;
+  width: 80%;
+  border: 1px solid #888;
+  background-color: #eee;
+  padding: 4px 8px;
+  border-radius: 5px;
+}
+
+pre.query {
+  margin-left: 2ex;
+}

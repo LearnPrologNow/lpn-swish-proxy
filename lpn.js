@@ -7,32 +7,31 @@
  * @requires jquery
  */
 
-define([ "jquery", "laconic" ],
-       function() {
-
 (function($) {
-  var pluginName = 'PLUGIN';
+  var pluginName = 'LPN';
 
-  /** @lends $.fn.PLUGIN */
+  var SWISH = "http://swish.swi-prolog.org";
+
+  /** @lends $.fn.LPN */
   var methods = {
     _init: function(options) {
       return this.each(function() {
 	var elem = $(this);
 	var data = {};			/* private data */
 
-	<setup the widget>
+	alert("Hello!");
 
 	elem.data(pluginName, data);	/* store with element */
       });
     }
   }; // methods
 
-  <private functions>
+  // <private functions>
 
   /**
    * <Class description>
    *
-   * @class PLUGIN
+   * @class LPN
    * @tutorial jquery-doc
    * @memberOf $.fn
    * @param {String|Object} [method] Either a method name or the jQuery
@@ -40,7 +39,7 @@ define([ "jquery", "laconic" ],
    * @param [...] Zero or more arguments passed to the jQuery `method`
    */
 
-  $.fn.PLUGIN = function(method) {
+  $.fn.LPN = function(method) {
     if ( methods[method] ) {
       return methods[method]
 	.apply(this, Array.prototype.slice.call(arguments, 1));
@@ -51,4 +50,3 @@ define([ "jquery", "laconic" ],
     }
   };
 }(jQuery));
-});
