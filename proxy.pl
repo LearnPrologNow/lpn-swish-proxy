@@ -4,11 +4,14 @@
 :- use_module(convert).
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
+:- use_module(library(http/http_server_files)).
 :- use_module(library(http/http_open)).
 
 user:file_search_path(lpn, .).
 user:file_search_path(lpn_cache, lpn(cache)).
 
+:- http_handler('/', http_redirect(moved_temporary,
+				   '/lpnpage.php?pageid=online'), []).
 :- http_handler('/', serve_files_in_directory(lpn), [prefix]).
 :- http_handler('/lpnpage.php', lpn, []).
 
