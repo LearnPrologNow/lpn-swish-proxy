@@ -11,7 +11,10 @@
 :- debug(lpn).
 
 convert_lpn(In, Out) :-
-	load_html(In, DOM, []),
+	load_html(In, DOM,
+		  [ syntax_errors(quiet),
+		    max_errors(-1)
+		  ]),
 	convert_dom(DOM, DOM1),
 	setup_call_cleanup(
 	    open(Out, write, Stream),
