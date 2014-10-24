@@ -28,11 +28,12 @@
 	  elem.wrap("<div class='source'></div>");
 	  elem.parent()
 	    .append("<div class='load'></div>")
-	    .on("click", "div.load", loadFromLoadButton);
+	    .on("click", "div.load", toggleSWISH);
 	} else if ( elem.hasClass("query") ) {
 	  if ( currentSource )
 	    currentSource.queries.push("?- ", elem.text(), "\n");
 	}
+
 	elem.data(pluginName, data);	/* store with element */
       });
     }
@@ -40,30 +41,40 @@
 
   // <private functions>
 
-  function loadFromLoadButton() {
+  function toggleSWISH() {
     function attr(name, value) {
       content.push(" ", name, "='", value, "'");
     }
 
     var elem    = $(this).parent().find("pre.source");
     var data    = elem.data(pluginName);
-    var source  = elem.text();
-    var query   = SWISH+"?code="+encodeURIComponent(source);
-    var content = [ "<iframe " ];
 
-    if ( data.queries.length > 0 ) {
-      query += "&examples=" + encodeURIComponent(data.queries.join(""));
+    if ( data.swish ) {
+      var swish = data.swish;
+
+      delete data.swish;
+      swish.hide(400, function() { swish.remove(); });
+      elem.show(400, function() { elem.parent().removeClass("swish"); });
+    } else
+    { var source  = elem.text();
+      var query   = SWISH+"?code="+encodeURIComponent(source);
+      var content = [ "<iframe " ];
+
+      if ( data.queries.length > 0 ) {
+	query += "&examples=" + encodeURIComponent(data.queries.join(""));
+      }
+
+      attr("class", "swish");
+      attr("src", query);
+      attr("width", "100%");
+      attr("height", (window.innerHeight * 0.3)+"px");
+
+      content.push("></iframe>");
+
+      data.swish = $(content.join("")).hide().insertAfter(elem);
+      elem.hide(400);
+      data.swish.show(400, function() { elem.parent().addClass("swish"); });
     }
-
-    attr("class", "swish");
-    attr("src", query);
-    attr("width", (window.innerWidth   * 0.9)+"px");
-    attr("height", (window.innerHeight * 0.8)+"px");
-
-    content.push("></iframe>");
-
-    modal.open({ content: content.join("")
-               });
   }
 
   /**
