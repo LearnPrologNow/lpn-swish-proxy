@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * <Description of the File>
+ * Embedded SWISH
  *
  * @version 0.2.0
  * @author Jan Wielemaker, J.Wielemaker@vu.nl
@@ -9,6 +9,7 @@
 
 (function($) {
   var pluginName = 'LPN';
+  var currentSWISHElem = null;
 
   var SWISH = "http://swish.swi-prolog.org/";
 //var SWISH = "http://localhost:3050/";
@@ -28,7 +29,9 @@
 	  elem.wrap("<div class='source'></div>");
 	  elem.parent()
 	    .append("<div class='load'></div>")
-	    .on("click", "div.load", toggleSWISH);
+	    .on("click", "div.load", function() {
+	      toggleSWISH(elem);
+	    });
 	} else if ( elem.hasClass("query") ) {
 	  if ( currentSource )
 	    currentSource.queries.push("?- ", elem.text(), "\n");
@@ -41,24 +44,27 @@
 
   // <private functions>
 
-  function toggleSWISH() {
+  function toggleSWISH(elem) {
     function attr(name, value) {
       content.push(" ", name, "='", value, "'");
     }
 
-    var elem    = $(this).parent().find("pre.source");
     var data    = elem.data(pluginName);
 
     if ( data.swish ) {
       var swish = data.swish;
 
       delete data.swish;
+      currentSWISHElem = null;
       swish.hide(400, function() { swish.remove(); });
       elem.show(400, function() { elem.parent().removeClass("swish"); });
     } else
     { var source  = elem.text();
       var query   = SWISH+"?code="+encodeURIComponent(source);
       var content = [ "<iframe " ];
+
+      if ( currentSWISHElem )
+	toggleSWISH(currentSWISHElem);
 
       if ( data.queries.length > 0 ) {
 	query += "&examples=" + encodeURIComponent(data.queries.join(""));
@@ -74,6 +80,8 @@
       data.swish = $(content.join("")).hide().insertAfter(elem);
       elem.hide(400);
       data.swish.show(400, function() { elem.parent().addClass("swish"); });
+
+      currentSWISHElem = elem;
     }
   }
 
