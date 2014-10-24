@@ -1,8 +1,10 @@
 :- module(lpn_proxy,
-	  [ server/1
+	  [ local/0,
+	    server/1			% +Port
 	  ]).
 :- use_module(convert).
 :- use_module(library(option)).
+:- use_module(library(settings)).
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_server_files)).
@@ -15,6 +17,13 @@ This module implements a simple proxy that rewrites LPN to link to SWISH
 
 user:file_search_path(lpn, .).
 user:file_search_path(lpn_cache, lpn(cache)).
+
+:- setting(lpn_home, atom,
+	   'http://www.learnprolognow.org',
+	   'The location from which we proxy').
+
+local :-
+	set_setting(lpn_home, 'http://localhost:8000').
 
 :- http_handler('/', http_redirect(moved_temporary,
 				   '/lpnpage.php?pageid=online'), []).
@@ -37,7 +46,8 @@ lpn(Request) :-
 			       [access(write), file_errors(fail)])
 	->  download(URI, Path),
 	    reply_from_file(Path)
-	;   atom_concat('http://www.learnprolognow.org', URI, Source),
+	;   setting(lpn_home, LPNHome),
+	    atom_concat(LPNHome, URI, Source),
 	    setup_call_cleanup(
 		http_open(Source, In, []),
 		reply_from_stream(In),
@@ -70,7 +80,8 @@ pics(Request) :-
 	).
 
 download(URI, Path) :-
-	atom_concat('http://www.learnprolognow.org', URI, Source),
+	setting(lpn_home, LPNHome),
+	atom_concat(LPNHome, URI, Source),
 	setup_call_cleanup(
 	    http_open(Source, In, []),
 	    setup_call_cleanup(
