@@ -58,6 +58,10 @@
       currentSWISHElem = null;
       swish.hide(400, function() { swish.remove(); });
       elem.show(400, function() { elem.parent().removeClass("swish"); });
+      elem.parent()
+	.resizable('destroy')
+        .css("width", "auto")
+        .css("height", "auto");
     } else
     { var source  = elem.text();
       var query   = SWISH+"?code="+encodeURIComponent(source);
@@ -73,11 +77,16 @@
       attr("class", "swish");
       attr("src", query);
       attr("width", "100%");
-      attr("height", (window.innerHeight * 0.3)+"px");
+      attr("height", "100%");
 
       content.push("></iframe>");
 
-      data.swish = $(content.join("")).hide().insertAfter(elem);
+      data.swish = $(content.join(""))
+	.hide()
+	.insertAfter(elem);
+      elem.parent()
+	.css("height", "300px")
+	.resizable();
       elem.hide(400);
       data.swish.show(400, function() { elem.parent().addClass("swish"); });
 

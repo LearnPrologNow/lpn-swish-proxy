@@ -45,7 +45,9 @@ convert(element(head, Args, C0),
 	element(head, Args,
 		[ element(meta, [charset='UTF-8'], []),
 		  element(link, [href='lpn.css', rel=stylesheet], []),
+		  element(link, [href='jquery-ui.min.css', rel=stylesheet], []),
 		  element(script, [src='jquery.min.js'], []),
+		  element(script, [src='jquery-ui.min.js'], []),
 		  element(script, [src='lpn.js'], [])
 		| C
 		])) :- !,

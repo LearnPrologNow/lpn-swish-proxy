@@ -7,6 +7,15 @@ div.source {
   border-radius: 5px;
 }
 
+div.source.swish {
+  padding: 8px 8px;
+}
+
+div.source iframe {
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
 pre.source {
   width: 100%;
 }
