@@ -86,7 +86,7 @@
 	.insertAfter(elem);
       elem.parent()
 	.css("height", "300px")
-	.resizable();
+	.resizable({handles:'s'});
       elem.hide(400);
       data.swish.show(400, function() { elem.parent().addClass("swish"); });
 
