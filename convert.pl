@@ -20,6 +20,7 @@ convert_lpn2(In, Out) :-
 		    max_errors(-1)
 		  ]),
 	convert_dom(DOM, DOM1),
+	classify_sources(DOM1),
 	(   is_stream(Out)
 	->  html_write(Out, DOM1, [])
 	;   setup_call_cleanup(
@@ -41,6 +42,12 @@ convert_dom(element(E,A,C0), element(E,A,C)) :-
 	convert_dom(C0,C).
 
 %%	convert(+DOM0, -DOM) is semidet.
+%
+%	This preforms three steps:
+%
+%	  - Extend the head with our dependencies
+%	  - Extend the body to call the `swish` jQuery plugin
+%	  - Classify sources in `fancyvrb` environments (verbatim)
 
 convert(element(head, Args, C0),
 	element(head, Args,
@@ -63,11 +70,10 @@ $(".swish").LPN();
 });
 '])
 	       ], C).
-convert(element(div, Attrs0, C0),
-	element(pre, [class=Class|Attrs], Pre)) :-
+convert(element(div, Attrs0, C0), Source) :-
 	select(class=fancyvrb, Attrs0, Attrs),
-	(   convert_source(C0, C)
-	->  classify_source(C, Pre, Class)
+	(   convert_source(C0, String)
+	->  put_attr(Source, 'LPN', source(String, Attrs))
 	;   debug(lpn, 'Failed to convert ~p', [C0]),
 	    fail
 	).
@@ -124,6 +130,25 @@ leading_spaces(Line, N, Count) :-
 	N2 is N+1,
 	leading_spaces(Line, N2, Count).
 leading_spaces(_, N, N).
+
+
+%%	classify_sources(+DOM1) is det.
+%
+%	Classify the sources we found on the page.  Sources are attributed
+%	variables holding the attribute =LPN= and value
+%	source(String, Attributes).
+
+classify_sources(DOM1) :-
+	term_attvars(DOM1, Sources),
+	maplist(classify_source, Sources).
+
+classify_source(Source) :-
+	get_attr(Source, 'LPN', source(String, Attrs)),
+	classify_source(String, Content, Class),
+	Element = element(pre, [class=Class|Attrs], Content),
+	del_attr(Source, 'LPN'),
+	Source = Element.
+
 
 %%	classify_source(C, Class) is det.
 %
