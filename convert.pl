@@ -85,7 +85,7 @@ content_text(CDATA) -->
 	  split_string(CDATA, " \t\n", " \t\n", Parts),
 	  atomics_to_string(Parts, " ", Text0),
 	  string_codes(Text0, Codes0),
-	  maplist(nbsp, Codes0, Codes),
+	  maplist(back_to_ascii, Codes0, Codes),
 	  string_codes(Text, Codes)
 	}, !,
 	[ Text ].
@@ -98,8 +98,9 @@ content_text(element(br, _, _)) --> !,
 content_text(element(_, _, Content)) -->
 	content_text(Content).
 
-nbsp(0x00A0, 32) :- !.
-nbsp(X, X).
+back_to_ascii(0x00A0, 0'\s) :- !.
+back_to_ascii(0x2019, 0'\') :- !.		% Unicode right single quote
+back_to_ascii(X, X).
 
 %%	remove_leading_spaces(+In, -Out)
 
