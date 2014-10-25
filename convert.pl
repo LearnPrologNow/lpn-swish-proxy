@@ -73,7 +73,10 @@ $(".swish").LPN();
 convert(element(div, Attrs0, C0), Source) :-
 	select(class=fancyvrb, Attrs0, Attrs),
 	(   convert_source(C0, String)
-	->  put_attr(Source, 'LPN', source(String, Attrs))
+	->  put_attr(Source, 'LPN',
+		     verb{text:String,
+			  attributes:Attrs,
+			  element:Source})
 	;   debug(lpn, 'Failed to convert ~p', [C0]),
 	    fail
 	).
@@ -135,12 +138,13 @@ leading_spaces(_, N, N).
 %%	classify_sources(+DOM1) is det.
 %
 %	Classify  the  sources  we  found  on   the  page.  Sources  are
-%	attributed variables holding  the  attribute   =LPN=  and  value
-%	source(String,  Attributes).  We  want  to  make  the  following
-%	inferences:
+%	attributed variables holding the  attribute   =LPN=  and value a
+%	dict. We want to make the following inferences:
 %
 %	  - Which fragments contain source code?
+%	    - Valid Prolog terms without "?-"
 %	  - Which fragments contain queries?
+%	    - One or more "?- Term." sequences
 %	  - Indentify relations between source code
 %	    - C1 is part of C2
 %	      - No need to make C1 executable (highlighted documentation)
@@ -151,44 +155,63 @@ leading_spaces(_, N, N).
 %	    - Query needs sources C1, C2, ...
 
 classify_sources(DOM1) :-
-	term_attvars(DOM1, Sources),
-	maplist(classify_source, Sources).
+	term_attvars(DOM1, Vars),
+	maplist(get_lpn, Vars, Verbs),
+	pre_classify_verbs(Verbs, Sources, Queries),
+	maplist(bind_r([class='swish source']), Sources),
+	maplist(bind_r([class=query]), Queries).
 
-classify_source(Source) :-
-	get_attr(Source, 'LPN', source(String, Attrs)),
-	classify_source(String, Content, Class),
-	Element = element(pre, [class=Class|Attrs], Content),
-	del_attr(Source, 'LPN'),
-	Source = Element.
+pre_classify_verbs([], [], []).
+pre_classify_verbs([H|T], Sources, Queries) :-
+	pre_classify_source(H.text, Content, Terms, Class),
+	H1 = H.put(content, Content),
+	(   Class == verbatim
+	->  bind(H1, [class=verbatim])
+	;   Class == source
+	->  Sources = [H1.put(terms, Terms)|SourcesT],
+	    Queries = QueriesT
+	;   assertion(Class==query)
+	->  Queries = [H1.put(terms, Terms)|QueriesT],
+	    Sources = SourcesT
+	),
+	pre_classify_verbs(T, SourcesT, QueriesT).
 
+get_lpn(Var, Dict) :-
+	get_attr(Var, 'LPN', Dict).
 
-%%	classify_source(C, Class) is det.
+bind_r(Attrs, Dict) :-
+	bind(Dict, Attrs).
+bind(Dict, Attrs) :-
+	del_attr(Dict.element, 'LPN'),
+	append(Attrs, Dict.attributes, AllAttrs),
+	Dict.element = element(pre, AllAttrs, Dict.content).
+
+%%	pre_classify_source(+String, -Content, -Terms, -Class) is det.
 %
-%	Try to classify the source.
+%	Pre classification of  a  source  fragment.   Class  is  one  of
+%	=source=, =query= or =verbatim=. Terms is a list of Prolog terms
+%	found.
 
-classify_source(C, [C], Class) :-
+pre_classify_source(C, [C], Terms, source) :-
 	source_terms(C, Terms),
-	Terms \= [?-_|_], !,
-	(   set_source(Terms)
-	->  Class = 'swish source'
-	;   Class = 'source'			% fragment of previous
-	).
-classify_source(C, Queries, query) :-
+	Terms \= [?-_|_], !.
+pre_classify_source(C, Queries, Terms, query) :-
 	string_codes(C, Codes),
-	phrase(queries(Queries), Codes),
+	phrase(queries(Queries, Terms), Codes),
 	\+ (Queries = [S], string(S)), !.	% did annotate something.
-classify_source(C, [C], code).
+pre_classify_source(C, [C], [], verbatim).
 
-queries([Lead, element(span, [class='swish query'], [Query])|More]) -->
+queries([Lead, element(span, [class='swish query'], [Query])|More],
+        [(?- Term)|Terms]) -->
 	here(Start), string(_), here(SQ),
 	"?-", whites, string(S), ".", here(EQ), peek_ws,
 	{ string_codes(QS, S),
-	  catch(term_string(_T, QS), _, fail), !,
+	  catch(term_string(Term, QS), _, fail), !,
 	  string_between(Start, SQ, Lead),
 	  string_between(SQ, EQ, Query)
 	},
-	queries(More).
-queries([Rest]) -->
+	queries(More, Terms).
+queries([Rest], []) -->
 	string(Codes), \+ [_], !,
 	{ string_codes(Rest, Codes) }.
 
