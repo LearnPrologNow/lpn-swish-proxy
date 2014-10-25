@@ -135,13 +135,42 @@ classify_source(C, [C], Class) :-
 	->  Class = 'swish source'
 	;   Class = nosource
 	).
-classify_source(C, ["?- ", element(span, [class='swish query'], [QT]), AC], query) :-
+classify_source(C, Queries, query) :-
 	string_codes(C, Codes),
-	phrase((whites, "?-", whites, string(S), "."), Codes, Rest),
-	string_codes(QT0, S),
-	catch(term_string(_T, QT0), _, fail), !,
-	string_concat(QT0, ".", QT),
-	string_codes(AC, Rest).
+	phrase(queries(Queries), Codes).
+
+queries([Lead, element(span, [class='swish query'], [Query])|More]) -->
+	here(Start), string(_),	"?-", whites, here(SQ), string(S), ".", here(EQ),
+	peek_ws,
+	{ string_codes(QS, S),
+	  catch(term_string(_T, QS), _, fail), !,
+	  string_between(Start, SQ, Lead),
+	  string_between(SQ, EQ, Query)
+	},
+	queries(More).
+queries([Rest]) -->
+	string(Codes), \+ [_], !,
+	{ string_codes(Rest, Codes) }.
+
+peek_ws, [C] --> [C], {ws(C)}, !.
+peek_ws --> \+ [_].
+
+ws(0'\s).
+ws(0'\t).
+ws(0'\n).
+
+here(T,T,T).
+
+string_between(Start, End, String) :-
+	diff_codes(Start, End, Codes),
+	string_codes(String, Codes).
+
+diff_codes(Start, End, Empty) :-
+	Start == End, !,
+	Empty = [].
+diff_codes([H|T0], End, [H|T]) :-
+	diff_codes(T0, End, T).
+
 
 %%	set_source(+Terms) is semidet.
 %
