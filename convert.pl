@@ -164,14 +164,15 @@ classify_sources(DOM1) :-
 pre_classify_verbs([], [], []).
 pre_classify_verbs([H|T], Sources, Queries) :-
 	pre_classify_source(H.text, Content, Terms, Class),
+	xref_terms(Terms, XREF),
 	H1 = H.put(content, Content),
 	(   Class == verbatim
 	->  bind(H1, [class=verbatim])
 	;   Class == source
-	->  Sources = [H1.put(terms, Terms)|SourcesT],
+	->  Sources = [H1.put(_{terms:Terms, xref:XREF})|SourcesT],
 	    Queries = QueriesT
 	;   assertion(Class==query)
-	->  Queries = [H1.put(terms, Terms)|QueriesT],
+	->  Queries = [H1.put(_{terms:Terms, xref:XREF})|QueriesT],
 	    Sources = SourcesT
 	),
 	pre_classify_verbs(T, SourcesT, QueriesT).
@@ -291,7 +292,11 @@ xref_terms(Terms, Result) :-
 	phrase(xref_terms(Terms), Pairs),
 	keysort(Pairs, Sorted),
 	group_pairs_by_key(Sorted, Grouped),
-	dict_pairs(Result, xref, Grouped).
+	maplist(value_to_set, Grouped, GroupedSets),
+	dict_pairs(Result, xref, GroupedSets).
+
+value_to_set(Key-List, Key-Set) :-
+	sort(List, Set).
 
 xref_terms([]) --> [].
 xref_terms([H|T]) --> xref_term(H), xref_terms(T).
