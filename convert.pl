@@ -140,7 +140,7 @@ classify_source(C, Queries, query) :-
 	phrase(queries(Queries), Codes).
 
 queries([Lead, element(span, [class='swish query'], [Query])|More]) -->
-	here(Start), string(_),	"?-", whites, here(SQ), string(S), ".", here(EQ),
+	here(Start), string(_), here(SQ), "?-", whites, string(S), ".", here(EQ),
 	peek_ws,
 	{ string_codes(QS, S),
 	  catch(term_string(_T, QS), _, fail), !,
