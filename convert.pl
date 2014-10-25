@@ -133,7 +133,7 @@ classify_source(C, [C], Class) :-
 	Terms \= [?-_|_], !,
 	(   set_source(Terms)
 	->  Class = 'swish source'
-	;   Class = nosource
+	;   Class = 'source'			% fragment of previous
 	).
 classify_source(C, Queries, query) :-
 	string_codes(C, Codes),
