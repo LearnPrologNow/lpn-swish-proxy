@@ -25,6 +25,7 @@
 
 	if ( elem.hasClass("source") ) {
 	  data.queries = [];
+	  data.source = elem.text();
 	  currentSource = data;
 	  elem.wrap("<div class='source'></div>");
 	  elem.parent()
@@ -33,8 +34,17 @@
 	      toggleSWISH(elem);
 	    });
 	} else if ( elem.hasClass("query") ) {
-	  if ( currentSource )
+	  if ( currentSource ) {
 	    currentSource.queries.push("?- ", elem.text(), "\n");
+	  } else {
+	    data.queries = ["?- ", elem.text(), "\n"];
+	    elem.wrap("<div class='query'></div>");
+	    elem.parent()
+	      .append("<div class='load'></div>")
+	      .on("click", "div.load", function() {
+	        toggleSWISH(elem);
+	      });
+	  }
 	}
 
 	elem.data(pluginName, data);	/* store with element */
@@ -60,18 +70,22 @@
       elem.show(400, function() { elem.parent().removeClass("swish"); });
       elem.parent()
 	.resizable('destroy')
-        .css("width", "auto")
         .css("height", "auto");
     } else
-    { var source  = elem.text();
-      var query   = SWISH+"?code="+encodeURIComponent(source);
+    { var query   = SWISH;
       var content = [ "<iframe " ];
+      var q = "?";
 
       if ( currentSWISHElem )
 	toggleSWISH(currentSWISHElem);
 
+      if ( data.source ) {
+	query += q+"code="+encodeURIComponent(data.source);
+	q = "&";
+      }
       if ( data.queries.length > 0 ) {
-	query += "&examples=" + encodeURIComponent(data.queries.join(""));
+	query += q + "examples=" + encodeURIComponent(data.queries.join(""));
+	q = "&";
       }
 
       attr("class", "swish");

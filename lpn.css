@@ -7,21 +7,27 @@ div.source {
   border-radius: 5px;
 }
 
-div.source.swish {
+pre.query, pre.nosource {
+  margin: 10px 2ex;
+}
+
+div.query {
+  position: relative;
+  width: 80%;
+  display: inline-block;
+}
+
+div.source.swish, div.query.swish {
   padding: 8px 8px;
 }
 
-div.source iframe {
+div.source iframe, div.query iframe {
   border-radius: 5px;
   box-sizing: border-box;
 }
 
-pre.source {
+pre.source, pre.query {
   width: 100%;
-}
-
-pre.query, pre.nosource {
-  margin: 10px 2ex;
 }
 
 div.load {
@@ -35,7 +41,11 @@ div.load {
   background-size: 100%;
 }
 
-div.source.swish div.load {
+div.query div.load {
+ top: -5px;
+}
+
+div.source.swish div.load, div.query.swish div.load {
   background-image: url("close.png");
 }
 
