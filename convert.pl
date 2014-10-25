@@ -137,11 +137,13 @@ classify_source(C, [C], Class) :-
 	).
 classify_source(C, Queries, query) :-
 	string_codes(C, Codes),
-	phrase(queries(Queries), Codes).
+	phrase(queries(Queries), Codes),
+	\+ (Queries = [S], string(S)), !.	% did annotate something.
+classify_source(C, [C], code).
 
 queries([Lead, element(span, [class='swish query'], [Query])|More]) -->
-	here(Start), string(_), here(SQ), "?-", whites, string(S), ".", here(EQ),
-	peek_ws,
+	here(Start), string(_), here(SQ),
+	"?-", whites, string(S), ".", here(EQ), peek_ws,
 	{ string_codes(QS, S),
 	  catch(term_string(_T, QS), _, fail), !,
 	  string_between(Start, SQ, Lead),
