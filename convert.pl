@@ -105,7 +105,7 @@ content_text(element(br, _, _)) --> !,
 content_text(element(_, _, Content)) -->
 	content_text(Content).
 
-back_to_ascii(0x00A0, 0'\s) :- !.
+back_to_ascii(0x00A0, 0'\s) :- !.		% '
 back_to_ascii(0x2019, 0'\') :- !.		% Unicode right single quote
 back_to_ascii(X, X).
 
@@ -134,9 +134,21 @@ leading_spaces(_, N, N).
 
 %%	classify_sources(+DOM1) is det.
 %
-%	Classify the sources we found on the page.  Sources are attributed
-%	variables holding the attribute =LPN= and value
-%	source(String, Attributes).
+%	Classify  the  sources  we  found  on   the  page.  Sources  are
+%	attributed variables holding  the  attribute   =LPN=  and  value
+%	source(String,  Attributes).  We  want  to  make  the  following
+%	inferences:
+%
+%	  - Which fragments contain source code?
+%	  - Which fragments contain queries?
+%	  - Indentify relations between source code
+%	    - C1 is part of C2
+%	      - No need to make C1 executable (highlighted documentation)
+%	    - C1 implements the same predicates C2
+%	      - Might have do do with alternatives
+%	  - Indentify queries
+%	    - Query needs only built-ins
+%	    - Query needs sources C1, C2, ...
 
 classify_sources(DOM1) :-
 	term_attvars(DOM1, Sources),
