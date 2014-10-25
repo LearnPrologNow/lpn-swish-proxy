@@ -6,6 +6,7 @@
 :- use_module(library(lists)).
 :- use_module(library(debug)).
 :- use_module(library(apply)).
+:- use_module(library(pairs)).
 :- use_module(library(dcg/basics)).
 
 :- debug(lpn).
@@ -212,3 +213,151 @@ read_stream_to_terms(Term, _, []) :-
 read_stream_to_terms(Term, Stream, [Term|Rest]) :-
 	read(Stream, T0),
 	read_stream_to_terms(T0, Stream, Rest).
+
+
+		 /*******************************
+		 *	        XREF		*
+		 *******************************/
+
+%%	xref_terms(+Terms, -XRef:dict) is det.
+%
+%	Cross-reference a list of terms, returning a dict that contains:
+%
+%	  - defined:ListOfHeads
+%	  - called:ListOfHeads
+%	  - error:ListOfErrorTerms
+
+xref_terms(Terms, Result) :-
+	phrase(xref_terms(Terms), Pairs),
+	keysort(Pairs, Sorted),
+	group_pairs_by_key(Sorted, Grouped),
+	dict_pairs(Result, xref, Grouped).
+
+xref_terms([]) --> [].
+xref_terms([H|T]) --> xref_term(H), xref_terms(T).
+
+xref_term(Var) -->
+	{ var(Var) }, !.
+xref_term((Head :- Body)) --> !,
+	xref_head(Head),
+	xref_body(Body).
+xref_term((Head --> Body)) --> !,
+	xref_dcg_head(Head),
+	xref_dcg_body(Body).
+xref_term((:- Body)) --> !,
+	xref_body(Body).
+xref_term((?- Body)) --> !,
+	xref_body(Body).
+xref_term(Head) -->
+	xref_head(Head).
+
+xref_head(Term) --> { atom(Term) }, !, [defined-Term].
+xref_head(Term) --> { compound(Term), !, generalize(Term,Gen) }, [defined-Gen].
+xref_head(Term) --> [ error-type_error(callable, Term) ].
+
+xref_body(Term) --> { var(Term) }, !.
+xref_body(Term) -->
+	{ predicate_property(user:Term, meta_predicate(Meta)), !,
+	  generalize(Term, Called),
+	  Term =.. [_|Args],
+	  Meta =.. [_|Specs]
+	},
+	[ called-Called ],
+	xref_meta(Specs, Args).
+xref_body(Term) --> { atom(Term) }, !, [called-Term].
+xref_body(Term) --> { compound(Term), !, generalize(Term,Gen) }, [called-Gen].
+xref_body(Term) --> [ error-type_error(callable, Term) ].
+
+xref_meta([], []) --> [].
+xref_meta([S|ST], [A|AT]) -->
+	xref_meta1(S, A),
+	xref_meta(ST, AT).
+
+xref_meta1(0, A) --> !,
+	xref_body(A).
+xref_meta1(^, A0) --> !,
+	{ strip_existential(A0, A) },
+	xref_body(A).
+xref_meta1(N, A0) -->
+	{ integer(N), N > 0, !,
+	  extend(A0, N, A)
+	},
+	xref_body(A).
+xref_meta1(_, _) --> [].
+
+
+xref_dcg_head(Var) -->
+	{ var(Var) }, !,
+	[ error-instantiation_error(Var) ].
+xref_dcg_head((A,B)) -->
+	{ is_list(B) }, !,
+	xref_dcg_head(A).
+xref_dcg_head(Term) -->
+	{ atom(Term), !,
+	  functor(Head, Term, 2)
+	},
+	[ defined-Head ].
+xref_dcg_head(Term) -->
+	{ compound(Term), !,
+	  compound_name_arity(Term, Name, Arity0),
+	  Arity is Arity0+2,
+	  compound_name_arity(Gen, Name, Arity)
+	},
+	[ defined-Gen ].
+xref_dcg_head(Term) -->
+	[ error-type_error(callable, Term) ].
+
+xref_dcg_body(Body) -->
+	{ var(Body) }, !.
+xref_dcg_body(Body) -->
+	{ dcg_control(Body, Called) }, !,
+	xref_dcg_body_list(Called).
+xref_dcg_body(Terminal) -->
+	{ is_list(Terminal) ; string(Terminal) }, !.
+xref_dcg_body(Term) -->
+	{ atom(Term), !,
+	  functor(Head, Term, 2)
+	},
+	[ called-Head ].
+xref_dcg_body(Term) -->
+	{ compound(Term), !,
+	  compound_name_arity(Term, Name, Arity0),
+	  Arity is Arity0+2,
+	  compound_name_arity(Gen, Name, Arity)
+	},
+	[ called-Gen ].
+xref_dcg_body(Term) -->
+	[ error-type_error(callable, Term) ].
+
+dcg_control((A,B), [A,B]).
+dcg_control((A;B), [A,B]).
+dcg_control((A->B), [A,B]).
+dcg_control((A*->B), [A,B]).
+dcg_control(\+(A), [A]).
+
+xref_dcg_body_list([]) --> [].
+xref_dcg_body_list([H|T]) --> xref_dcg_body(H), xref_dcg_body_list(T).
+
+strip_existential(T0, T) :-
+	(   var(T0)
+	->  T = T0
+	;   T0 = _^T1
+	->  strip_existential(T1, T)
+	;   T = T0
+	).
+
+extend(T0, N, T) :-
+	atom(T0), !,
+	length(Args, N),
+	T =.. [T0|Args].
+extend(T0, N, T) :-
+	compound(T0),
+	compound_name_arguments(T0, Name, Args0),
+	length(Extra, N),
+	append(Args0, Extra, Args),
+	compound_name_arguments(T, Name, Args).
+
+generalize(Compound, Gen) :-
+	compound_name_arity(Compound, Name, Arity),
+	compound_name_arity(Gen, Name, Arity).
+
