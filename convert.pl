@@ -328,15 +328,15 @@ can_run_in(Called, Sources, Used) :-
 	include(references(Required), Sources, Used),
 	maplist(provides, Used, ProvidesSuper),
 	append(ProvidesSuper, Provides),
-	variant_set(Provides, ProvidesSet),
-	variant_subset(Required, ProvidesSet).
+	sort(Provides, ProvidesSet),
+	ord_subset(Required, ProvidesSet).
 
 built_in(Head) :-
 	predicate_property(Head, built_in).
 
 references(Required, Source) :-
 	provides(Source, Provides),
-	variant_intersect(Required, Provides).
+	ord_intersect(Required, Provides).
 
 provides(Source, Provides) :-
 	get_lpn(Source, Dict),
@@ -344,16 +344,6 @@ provides(Source, Provides) :-
 	->  Provides = Defined
 	;   Provides = []
 	).
-
-variant_intersect(Set1, Set2) :-
-	member(E1, Set1),
-	member(E2, Set2),
-	E1 =@= E2, !.
-
-variant_subset(SubSet, Set) :-
-	forall(member(E1, SubSet),
-	       ( member(E2, Set),
-		 E2 =@= E1)).
 
 %%	id_variants(+Vars)
 %
@@ -383,10 +373,8 @@ exports(Source, ExportPIs) :-
 	->  true
 	;   Required = []
 	),
-	maplist(head_pi, Required, RequiredPI),
-	maplist(head_pi, XREF.defined, DefinedPI),
-	ord_intersection(RequiredPI, DefinedPI, Recursive),
-	ord_subtract(DefinedPI, RequiredPI, NeededPIs),
+	ord_intersection(Required, XREF.defined, Recursive),
+	ord_subtract(XREF.defined, Required, NeededPIs),
 	ord_union(Recursive, NeededPIs, ExportPIs).
 
 tag_variants([], _).
@@ -395,6 +383,7 @@ tag_variants([_-[]|T], Id) :- !,
 tag_variants([_-Group|T], Id0) :-
 	succ(Id0, Id),
 	atom_concat('group-', Id, GroupID),
+	debug(lpn(variant), 'Variant group ~q: ~p', [GroupID, Group]),
 	tag_variants(Group, [], GroupID),
 	tag_variants(T, Id).
 
@@ -493,9 +482,9 @@ read_stream_to_terms(Term, Stream, [Term|Rest]) :-
 %
 %	Cross-reference a list of terms, returning a dict that contains:
 %
-%	  - defined:ListOfHeads
-%	  - called:ListOfHeads
-%	  - error:ListOfErrorTerms
+%	  - defined:OrdSetOfPI
+%	  - called:OrdSetOfPI
+%	  - error:SetOfErrorTerms
 
 xref_terms(Terms, Result) :-
 	phrase(xref_terms(Terms), Pairs),
@@ -504,11 +493,14 @@ xref_terms(Terms, Result) :-
 	maplist(value_to_set, Grouped, GroupedSets),
 	dict_pairs(Result, xref, GroupedSets).
 
-value_to_set(Key-List, Key-Set) :-
+value_to_set(error-List, error-Set) :- !,
 	variant_set(List, Set).
+value_to_set(Key-HeadList, Key-PISet) :-
+	maplist(head_pi, HeadList, PIList),
+	sort(PIList, PISet).
 
 variant_set(List, Set) :-
-	sort(List, Set1),
+	list_to_set(List, Set1),
 	remove_variants(Set1, Set).
 
 remove_variants([], []).
