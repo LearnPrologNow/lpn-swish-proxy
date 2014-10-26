@@ -10,6 +10,7 @@
 :- use_module(library(pairs)).
 :- use_module(library(dcg/basics)).
 :- use_module(library(settings)).
+:- use_module(library(ordsets)).
 
 :- setting(swish, atom,
 	   'http://swish.swi-prolog.org/',
@@ -19,7 +20,8 @@ local_swish(Port) :-
 	format(atom(SWISH), 'http://localhost:~w/', [Port]),
 	set_setting(swish, SWISH).
 
-:- debug(lpn).
+:- debug(lpn(convert)).
+:- debug(lpn(_)).
 
 convert_lpn(In, Out) :-
 	\+ \+ convert_lpn2(In, Out).
@@ -86,7 +88,7 @@ convert(element(div, Attrs0, C0), Source) :-
 		     verb{text:String,
 			  attributes:Attrs,
 			  element:Source})
-	;   debug(lpn, 'Failed to convert ~p', [C0]),
+	;   debug(lpn(convert), 'Failed to convert ~p', [C0]),
 	    fail
 	).
 
@@ -168,6 +170,7 @@ classify_sources(DOM) :-
 	term_attvars(DOM, Vars),
 	pre_classify_verbs(Vars),
 	id_source_highlights(Vars),
+	id_queries(Vars),
 	maplist(bind, Vars).
 
 pre_classify_verbs([]).
@@ -231,17 +234,96 @@ source_highlights([_|T], C) :-
 
 %%	highlight_of(+Highlight, +Source)
 %
-%	True if Highlight is a consequtive sublist of Source.
+%	True if Highlight is a consequtive  sublist of Source. Note that
+%	we must use a variant check for   the  sublist rather than plain
+%	unification.
 
 highlight_of(H, S) :-
 	get_lpn(H, HD),
 	get_lpn(S, SD),
 	sub_list(HD.terms, SD.terms),
-	debug(lpn, '~w is highlight of ~w', [HD.text, SD.text]).
+	debug(lpn(highlight), '~w is highlight of ~w', [HD.text, SD.text]).
 
 sub_list(Sub, List) :-
-	append(Sub, _, SubV),
-	append(_, SubV, List), !.
+	length(Sub, Len),
+	length(Sub2, Len),
+	append(Sub2, _, SubV),
+	append(_, SubV, List),
+	Sub =@= Sub2, !.
+
+%%	id_queries(+Vars) is det.
+%
+%	Classify source fragments that are in  fact queries. This is the
+%	case if they consists of only a single term and this term can be
+%	executed in the context of preceeding (?) sources.
+
+id_queries(Vars) :-
+	id_queries(Vars, []).
+
+id_queries([], _).
+id_queries([H|T], SL) :-
+	has_class(source, H),
+	get_lpn(H, Dict),
+	Dict.terms = [Query],
+	xref_terms([?-Query], xref{called:Called}),
+	can_run_in(Called, SL, _Used), !,
+	make_query(H, Called),
+	id_queries(T, SL).
+id_queries([H|T], SL) :-
+	has_class(source, H), !,
+	id_queries(T, [H|SL]).
+id_queries([_|T], SL) :-
+	id_queries(T, SL).
+
+make_query(V, Called) :-
+	get_lpn(V, Dict),
+	debug(lpn(query), 'Source seems query: ~w', [Dict.text]),
+	[Query] = Dict.terms,
+	string_concat("?- ", Dict.text, Text),
+	Content = ["", element(span, [class='swish query guessed'], [Text])],
+	put_lpn(V, Dict.put(_{content:Content,
+			      text:Text,
+			      class:query,
+			      terms:[?-Query],
+			      xref:xref{called:Called}
+			     })).
+
+%%	can_run_in(+Called, +Sources, -UseSources) is semidet.
+%
+%	True if Called can run with Sources, where UseSources is the
+%	subset of Sources that is actually used.
+
+can_run_in(Called, Sources, Used) :-
+	exclude(built_in, Called, Required),
+	include(references(Required), Sources, Used),
+	maplist(provides, Used, ProvidesSuper),
+	append(ProvidesSuper, Provides),
+	variant_set(Provides, ProvidesSet),
+	variant_subset(Required, ProvidesSet).
+
+built_in(Head) :-
+	predicate_property(Head, built_in).
+
+references(Required, Source) :-
+	provides(Source, Provides),
+	variant_intersect(Required, Provides).
+
+provides(Source, Provides) :-
+	get_lpn(Source, Dict),
+	(   Defined = Dict.xref.get(defined)
+	->  Provides = Defined
+	;   Provides = []
+	).
+
+variant_intersect(Set1, Set2) :-
+	member(E1, Set1),
+	member(E2, Set2),
+	E1 =@= E2, !.
+
+variant_subset(SubSet, Set) :-
+	forall(member(E1, SubSet),
+	       ( member(E2, Set),
+		 E2 =@= E1)).
 
 %%	pre_classify_source(+String, -Content, -Terms, -Class) is det.
 %
@@ -336,7 +418,22 @@ xref_terms(Terms, Result) :-
 	dict_pairs(Result, xref, GroupedSets).
 
 value_to_set(Key-List, Key-Set) :-
-	sort(List, Set).
+	variant_set(List, Set).
+
+variant_set(List, Set) :-
+	sort(List, Set1),
+	remove_variants(Set1, Set).
+
+remove_variants([], []).
+remove_variants([H|T0], [H|T]) :-
+	skip_variants(T0, H, T1),
+	remove_variants(T1, T).
+
+skip_variants([H|T0], V, T) :-
+	H =@= V, !,
+	skip_variants(T0, V, T).
+skip_variants(L, _, L).
+
 
 xref_terms([]) --> [].
 xref_terms([H|T]) --> xref_term(H), xref_terms(T).
