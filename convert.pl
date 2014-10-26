@@ -155,16 +155,17 @@ leading_spaces(_, N, N).
 %	  - Which fragments contain queries?
 %	    - One or more "?- Term." sequences
 %	  - Indentify relations between source code
-%	    - C1 is part of C2
+%	    - S1 follows S2 and is part of S2
 %	      - No need to make C1 executable (highlighted documentation)
-%	    - C1 implements the same predicates C2
+%	    - S1 implements the same predicates S2
 %	      - Might have do do with alternatives
+%	    - S1 requires S2.
 %	  - Indentify queries
 %	    - Query needs only built-ins
-%	    - Query needs sources C1, C2, ...
+%	    - Query needs sources S1, S2, ...
 
-classify_sources(DOM1) :-
-	term_attvars(DOM1, Vars),
+classify_sources(DOM) :-
+	term_attvars(DOM, Vars),
 	maplist(get_lpn, Vars, Verbs),
 	pre_classify_verbs(Verbs, Sources, Queries),
 	maplist(bind_r([class='swish source']), Sources),
@@ -176,7 +177,9 @@ pre_classify_verbs([H|T], Sources, Queries) :-
 	xref_terms(Terms, XREF),
 	H1 = H.put(content, Content),
 	(   Class == verbatim
-	->  bind(H1, [class=verbatim])
+	->  bind(H1, [class=verbatim]),
+	    Queries = QueriesT,
+	    Sources = SourcesT
 	;   Class == source
 	->  Sources = [H1.put(_{terms:Terms, xref:XREF})|SourcesT],
 	    Queries = QueriesT
