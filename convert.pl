@@ -484,14 +484,23 @@ read_stream_to_terms(Term, Stream, [Term|Rest]) :-
 %
 %	  - defined:OrdSetOfPI
 %	  - called:OrdSetOfPI
+%	  - required:OrdSetOfPI
 %	  - error:SetOfErrorTerms
+%
+%	Note that XRef.required is XRef.called \ built-in \XRef.defined.
 
 xref_terms(Terms, Result) :-
 	phrase(xref_terms(Terms), Pairs),
 	keysort(Pairs, Sorted),
 	group_pairs_by_key(Sorted, Grouped),
 	maplist(value_to_set, Grouped, GroupedSets),
-	dict_pairs(Result, xref, GroupedSets).
+	dict_pairs(Result0, xref, GroupedSets),
+	(   exclude(built_in, Result0.get(called), Called),
+	    ord_subtract(Called, Result0.get(defined), Required),
+	    Required \== []
+	->  Result = Result0.put(required, Required)
+	;   Result = Result0
+	).
 
 value_to_set(error-List, error-Set) :- !,
 	variant_set(List, Set).
