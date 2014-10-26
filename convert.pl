@@ -171,6 +171,7 @@ classify_sources(DOM) :-
 	pre_classify_verbs(Vars),
 	id_source_highlights(Vars),
 	id_queries(Vars),
+	id_variants(Vars),
 	maplist(bind, Vars).
 
 pre_classify_verbs([]).
@@ -181,12 +182,19 @@ pre_classify_verbs([V|T0]) :-
 	H1 = H.put(content, Content),
 	(   Class == verbatim
 	->  bind(H1, [class=verbatim])
-	;   put_lpn(V, H1.put(_{terms:Terms, xref:XREF, class:Class}))
+	;   set_lpn(V, H1.put(_{terms:Terms, xref:XREF, class:Class}))
 	),
 	pre_classify_verbs(T0).
 
 get_lpn(Var, Dict) :- get_attr(Var, 'LPN', Dict).
-put_lpn(Var, Dict) :- put_attr(Var, 'LPN', Dict).
+set_lpn(Var, Dict) :- put_attr(Var, 'LPN', Dict).
+
+put_lpn(Var, New) :-
+	get_lpn(Var, Dict0),
+	set_lpn(Var, Dict0.put(New)).
+put_lpn(Var, Key, Value) :-
+	get_lpn(Var, Dict0),
+	set_lpn(Var, Dict0.put(Key, Value)).
 
 bind(Var) :-
 	get_lpn(Var, Dict), !,
@@ -209,11 +217,15 @@ has_class(Class, V) :-
 add_class(V, Class) :-
 	get_lpn(V, Dict),
 	atomic_list_concat([Dict.class, Class], ' ', NewClass),
-	put_lpn(V, Dict.put(class, NewClass)).
+	set_lpn(V, Dict.put(class, NewClass)).
 
-set_class(V, Class) :-
+elem_id(Elem, ID) :-				% add an id if there is none?
+	get_lpn(Elem, Dict),
+	memberchk(id=ID, Dict.attributes).
+
+add_attr(V, Name, Value) :-
 	get_lpn(V, Dict),
-	put_lpn(V, Dict.put(class, Class)).
+	set_lpn(V, Dict.put(attributes, [Name=Value|Dict.attributes])).
 
 %%	id_source_highlights(+Vars)
 %
@@ -293,7 +305,7 @@ make_query(V, Called) :-
 	string_concat("?- ", Dict.text, Text0),
 	ensure_fullstop(Text0, Text),
 	Content = ["", element(span, [class='swish query guessed'], [Text])],
-	put_lpn(V, Dict.put(_{content:Content,
+	set_lpn(V, Dict.put(_{content:Content,
 			      text:Text,
 			      class:query,
 			      terms:[?-Query],
@@ -342,6 +354,61 @@ variant_subset(SubSet, Set) :-
 	forall(member(E1, SubSet),
 	       ( member(E2, Set),
 		 E2 =@= E1)).
+
+%%	id_variants(+Vars)
+%
+%	Identify that one source fragment is  the variant of another. We
+%	want to test that the source fragments   provide the same set of
+%	predicates. That is basically Defined\Called,  but the status of
+%	recursive predicates is unclear.  Possibly   we  should evaluate
+%	that in the context of the queries?
+%
+%	Found variants are indicated in two ways:
+%
+%	  - They get an HTML attribute 'data-variant-id' with a unique
+%	    id.
+%	  - The dict gets a key =variants=, which is a dict with keys
+%	    =before= and =after=
+
+id_variants(Vars) :-
+	include(has_class(source), Vars, Sources),
+	map_list_to_pairs(exports, Sources, ExportTagged),
+	group_pairs_by_key(ExportTagged, ByExport),
+	tag_variants(ByExport, 0).
+
+exports(Source, ExportPIs) :-
+	get_lpn(Source, Dict),
+	XREF = Dict.xref,
+	(   exclude(built_in, XREF.get(called), Required)
+	->  true
+	;   Required = []
+	),
+	maplist(head_pi, Required, RequiredPI),
+	maplist(head_pi, XREF.defined, DefinedPI),
+	ord_intersection(RequiredPI, DefinedPI, Recursive),
+	ord_subtract(DefinedPI, RequiredPI, NeededPIs),
+	ord_union(Recursive, NeededPIs, ExportPIs).
+
+tag_variants([], _).
+tag_variants([_-[]|T], Id) :- !,
+	tag_variants(T, Id).
+tag_variants([_-Group|T], Id0) :-
+	succ(Id0, Id),
+	atom_concat('group-', Id, GroupID),
+	tag_variants(Group, [], GroupID),
+	tag_variants(T, Id).
+
+tag_variants([], _, _).
+tag_variants([H|T], Before, ID) :-
+	add_attr(H, 'data-variant-id', ID),
+	put_lpn(H, variants, variants{before:Before,after:T}),
+	tag_variants(T, [H|Before], ID).
+
+head_pi(Head, Head/0) :-
+	atom(Head), !.
+head_pi(Head, Name/Arity) :-
+	compound_name_arity(Head, Name, Arity).
+
 
 %%	pre_classify_source(+String, -Content, -Terms, -Class) is det.
 %
