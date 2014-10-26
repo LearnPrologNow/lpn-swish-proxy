@@ -12,7 +12,6 @@
   var currentSWISHElem = null;
 
   var SWISH = "http://swish.swi-prolog.org/";
-//var SWISH = "http://localhost:3050/";
 
   /** @lends $.fn.LPN */
   var methods = {
@@ -22,6 +21,8 @@
       return this.each(function() {
 	var elem = $(this);
 	var data = {};			/* private data */
+
+	data.swish = options.swish || SWISH;
 
 	if ( elem.hasClass("source") ) {
 	  data.queries = [];
@@ -72,7 +73,7 @@
 	.resizable('destroy')
         .css("height", "auto");
     } else
-    { var query   = SWISH;
+    { var query   = data.swish;
       var content = [ "<iframe " ];
       var q = "?";
 

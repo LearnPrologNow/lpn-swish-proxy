@@ -1,5 +1,6 @@
 :- module(convert_lpn,
-	  [ convert_lpn/2		% +In, +Out
+	  [ convert_lpn/2,		% +In, +Out
+	    local_swish/1		% +Port
 	  ]).
 :- use_module(library(sgml)).
 :- use_module(library(sgml_write)).
@@ -8,6 +9,15 @@
 :- use_module(library(apply)).
 :- use_module(library(pairs)).
 :- use_module(library(dcg/basics)).
+:- use_module(library(settings)).
+
+:- setting(swish, atom,
+	   'http://swish.swi-prolog.org/',
+	   'SWISH server url').
+
+local_swish(Port) :-
+	format(atom(SWISH), 'http://localhost:~w/', [Port]),
+	set_setting(swish, SWISH).
 
 :- debug(lpn).
 
@@ -63,12 +73,11 @@ convert(element(head, Args, C0),
 convert(element(body, Args, C0),
 	element(body, Args, C)) :- !,
 	convert_dom(C0, C1),
+	setting(swish, SWISH),
+	format(string(Script),
+	       '$(function() { $(".swish").LPN({swish:"~w"}); });', [SWISH]),
 	append(C1,
-	       [ element(script, [], [
-'$(function() {
-$(".swish").LPN();
-});
-'])
+	       [ element(script, [], [Script])
 	       ], C).
 convert(element(div, Attrs0, C0), Source) :-
 	select(class=fancyvrb, Attrs0, Attrs),
