@@ -22,7 +22,7 @@
 	var elem = $(this);
 	var data = {};			/* private data */
 
-	data.swish = options.swish || SWISH;
+	data.swishURL = options.swish || SWISH;
 
 	if ( elem.hasClass("source") ) {
 	  data.queries = [];
@@ -73,7 +73,7 @@
 	.resizable('destroy')
         .css("height", "auto");
     } else
-    { var query   = data.swish;
+    { var query   = data.swishURL;
       var content = [ "<iframe " ];
       var q = "?";
 
