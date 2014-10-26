@@ -442,8 +442,14 @@ pre_classify_source(C, Queries, Terms, query) :-
 	phrase(queries(Queries, Terms), Codes),
 	\+ (Queries = [S], string(S)), !.	% did annotate something.
 pre_classify_source(C, [C], [Term], maybe_query) :-
-	catch(term_string(Term, C), _, fail), !.
+	catch(term_string(Term, C), _, fail),
+	\+ answer_term(Term).
 pre_classify_source(C, [C], [], verbatim).
+
+answer_term(Var) :- var(Var), !, fail.
+answer_term(Var = _Value) :- var(Var), !.
+answer_term((A;B)) :- answer_term(A), answer_term(B).
+
 
 queries([Lead, element(span, [class='swish query'], [Query])|More],
         [(?- Term)|Terms]) -->
