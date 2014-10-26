@@ -211,6 +211,10 @@ add_class(V, Class) :-
 	atomic_list_concat([Dict.class, Class], ' ', NewClass),
 	put_lpn(V, Dict.put(class, NewClass)).
 
+set_class(V, Class) :-
+	get_lpn(V, Dict),
+	put_lpn(V, Dict.put(class, Class)).
+
 %%	id_source_highlights(+Vars)
 %
 %	Identify source fragments that are highlights of previous
@@ -262,7 +266,10 @@ id_queries(Vars) :-
 
 id_queries([], _).
 id_queries([H|T], SL) :-
-	has_class(source, H),
+	(   has_class(source, H)
+	->  true
+	;   has_class(maybe_query, H)
+	),
 	get_lpn(H, Dict),
 	Dict.terms = [Query],
 	xref_terms([?-Query], xref{called:Called}),
@@ -272,6 +279,10 @@ id_queries([H|T], SL) :-
 id_queries([H|T], SL) :-
 	has_class(source, H), !,
 	id_queries(T, [H|SL]).
+id_queries([H|T], SL) :-
+	has_class(maybe_query, H), !,
+	bind(H, [class=verbatim]),
+	id_queries(T, [H|SL]).
 id_queries([_|T], SL) :-
 	id_queries(T, SL).
 
@@ -279,7 +290,8 @@ make_query(V, Called) :-
 	get_lpn(V, Dict),
 	debug(lpn(query), 'Source seems query: ~w', [Dict.text]),
 	[Query] = Dict.terms,
-	string_concat("?- ", Dict.text, Text),
+	string_concat("?- ", Dict.text, Text0),
+	ensure_fullstop(Text0, Text),
 	Content = ["", element(span, [class='swish query guessed'], [Text])],
 	put_lpn(V, Dict.put(_{content:Content,
 			      text:Text,
@@ -287,6 +299,12 @@ make_query(V, Called) :-
 			      terms:[?-Query],
 			      xref:xref{called:Called}
 			     })).
+
+ensure_fullstop(Text, Text) :-
+	split_string(Text, "", " \t\n", [Trimmed]),
+	sub_string(Trimmed, _, _, 0, "."), !.
+ensure_fullstop(Text0, Text) :-
+	string_concat(Text0, ".", Text).
 
 %%	can_run_in(+Called, +Sources, -UseSources) is semidet.
 %
@@ -338,6 +356,8 @@ pre_classify_source(C, Queries, Terms, query) :-
 	string_codes(C, Codes),
 	phrase(queries(Queries, Terms), Codes),
 	\+ (Queries = [S], string(S)), !.	% did annotate something.
+pre_classify_source(C, [C], [Term], maybe_query) :-
+	catch(term_string(Term, C), _, fail), !.
 pre_classify_source(C, [C], [], verbatim).
 
 queries([Lead, element(span, [class='swish query'], [Query])|More],
