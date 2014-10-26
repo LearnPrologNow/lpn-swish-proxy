@@ -7,7 +7,7 @@ div.source {
   border-radius: 5px;
 }
 
-pre.query, pre.source, pre.code {
+pre.query, pre.source, pre.verbatim {
   margin: 10px 2ex;
 }
 
