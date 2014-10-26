@@ -11,6 +11,10 @@ pre.query, pre.source, pre.code {
   margin: 10px 2ex;
 }
 
+.guessed {
+  outline: 1px dotted green;
+}
+
 div.query {
   position: relative;
   width: 80%;
