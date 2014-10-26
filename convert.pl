@@ -167,6 +167,7 @@ leading_spaces(_, N, N).
 classify_sources(DOM) :-
 	term_attvars(DOM, Vars),
 	pre_classify_verbs(Vars),
+	id_source_highlights(Vars),
 	maplist(bind, Vars).
 
 pre_classify_verbs([]).
@@ -186,17 +187,61 @@ put_lpn(Var, Dict) :- put_attr(Var, 'LPN', Dict).
 
 bind(Var) :-
 	get_lpn(Var, Dict), !,
-	map_class(Dict.class, Class),
+	final_class(Dict.class, Class),
 	bind(Dict, [class=Class]).
 bind(_).
 
-map_class(source, 'source swish').
-map_class(query, query).
+final_class(source, 'source swish') :- !.
+final_class(Class, Class).
 
 bind(Dict, Attrs) :-
 	del_attr(Dict.element, 'LPN'),
 	append(Attrs, Dict.attributes, AllAttrs),
 	Dict.element = element(pre, AllAttrs, Dict.content).
+
+has_class(Class, V) :-
+	get_lpn(V, Dict),
+	Class == Dict.class.
+
+add_class(V, Class) :-
+	get_lpn(V, Dict),
+	atomic_list_concat([Dict.class, Class], ' ', NewClass),
+	put_lpn(V, Dict.put(class, NewClass)).
+
+%%	id_source_highlights(+Vars)
+%
+%	Identify source fragments that are highlights of previous
+%	source fragments.  Such fragments form a sub-list.
+
+id_source_highlights(Vars) :-
+	source_highlights(Vars, -).
+
+source_highlights([], _).
+source_highlights([H|T], C) :-
+	has_class(source, H), !,
+	(   C == (-)
+	->  source_highlights(T, H)
+	;   highlight_of(H, C)
+	->  add_class(H, highlight),
+	    source_highlights(T, C)
+	;   source_highlights(T, H)
+	).
+source_highlights([_|T], C) :-
+	source_highlights(T, C).
+
+%%	highlight_of(+Highlight, +Source)
+%
+%	True if Highlight is a consequtive sublist of Source.
+
+highlight_of(H, S) :-
+	get_lpn(H, HD),
+	get_lpn(S, SD),
+	sub_list(HD.terms, SD.terms),
+	debug(lpn, '~w is highlight of ~w', [HD.text, SD.text]).
+
+sub_list(Sub, List) :-
+	append(Sub, _, SubV),
+	append(_, SubV, List), !.
 
 %%	pre_classify_source(+String, -Content, -Terms, -Class) is det.
 %
@@ -245,22 +290,6 @@ diff_codes(Start, End, Empty) :-
 	Empty = [].
 diff_codes([H|T0], End, [H|T]) :-
 	diff_codes(T0, End, T).
-
-
-%%	set_source(+Terms) is semidet.
-%
-%	Set our notion of the  current  source.   If  we  find  that the
-%	current element provides a sub-sequence   of the current source,
-%	we assume it is a description that  highlights a fragment and do
-%	not update our notion of the current source.
-
-set_source(Terms) :-
-	nb_current(lpn_source, Source),
-	append(Terms, _, OpenTerms),
-	append(_, OpenTerms, Source), !,
-	fail.
-set_source(Terms) :-
-	b_setval(lpn_source, Terms).
 
 
 %%	source_terms(+Text, -Terms) is semidet.
