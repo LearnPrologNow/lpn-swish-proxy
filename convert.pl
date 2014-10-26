@@ -166,34 +166,33 @@ leading_spaces(_, N, N).
 
 classify_sources(DOM) :-
 	term_attvars(DOM, Vars),
-	maplist(get_lpn, Vars, Verbs),
-	pre_classify_verbs(Verbs, Sources, Queries),
-	maplist(bind_r([class='swish source']), Sources),
-	maplist(bind_r([class=query]), Queries).
+	pre_classify_verbs(Vars),
+	maplist(bind, Vars).
 
-pre_classify_verbs([], [], []).
-pre_classify_verbs([H|T], Sources, Queries) :-
+pre_classify_verbs([]).
+pre_classify_verbs([V|T0]) :-
+	get_lpn(V, H),
 	pre_classify_source(H.text, Content, Terms, Class),
 	xref_terms(Terms, XREF),
 	H1 = H.put(content, Content),
 	(   Class == verbatim
-	->  bind(H1, [class=verbatim]),
-	    Queries = QueriesT,
-	    Sources = SourcesT
-	;   Class == source
-	->  Sources = [H1.put(_{terms:Terms, xref:XREF})|SourcesT],
-	    Queries = QueriesT
-	;   assertion(Class==query)
-	->  Queries = [H1.put(_{terms:Terms, xref:XREF})|QueriesT],
-	    Sources = SourcesT
+	->  bind(H1, [class=verbatim])
+	;   put_lpn(V, H1.put(_{terms:Terms, xref:XREF, class:Class}))
 	),
-	pre_classify_verbs(T, SourcesT, QueriesT).
+	pre_classify_verbs(T0).
 
-get_lpn(Var, Dict) :-
-	get_attr(Var, 'LPN', Dict).
+get_lpn(Var, Dict) :- get_attr(Var, 'LPN', Dict).
+put_lpn(Var, Dict) :- put_attr(Var, 'LPN', Dict).
 
-bind_r(Attrs, Dict) :-
-	bind(Dict, Attrs).
+bind(Var) :-
+	get_lpn(Var, Dict), !,
+	map_class(Dict.class, Class),
+	bind(Dict, [class=Class]).
+bind(_).
+
+map_class(source, 'source swish').
+map_class(query, query).
+
 bind(Dict, Attrs) :-
 	del_attr(Dict.element, 'LPN'),
 	append(Attrs, Dict.attributes, AllAttrs),
