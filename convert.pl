@@ -172,6 +172,7 @@ classify_sources(DOM) :-
 	id_source_highlights(Vars),
 	id_queries(Vars),
 	id_variants(Vars),
+	id_depends(Vars),
 	maplist(bind, Vars).
 
 pre_classify_verbs([]).
@@ -218,6 +219,10 @@ add_class(V, Class) :-
 	get_lpn(V, Dict),
 	atomic_list_concat([Dict.class, Class], ' ', NewClass),
 	set_lpn(V, Dict.put(class, NewClass)).
+
+set_class(V, Class) :-
+	get_lpn(V, Dict),
+	set_lpn(V, Dict.put(class, Class)).
 
 elem_id(Elem, ID) :-				% add an id if there is none?
 	get_lpn(Elem, Dict),
@@ -293,7 +298,8 @@ id_queries([H|T], SL) :-
 	id_queries(T, [H|SL]).
 id_queries([H|T], SL) :-
 	has_class(maybe_query, H), !,
-	bind(H, [class=verbatim]),
+	set_class(H, verbatim),
+	bind(H),
 	id_queries(T, [H|SL]).
 id_queries([_|T], SL) :-
 	id_queries(T, SL).
@@ -331,7 +337,8 @@ can_run_in(Called, Sources, Used) :-
 	sort(Provides, ProvidesSet),
 	ord_subset(Required, ProvidesSet).
 
-built_in(Head) :-
+built_in(Name/Arity) :-
+	functor(Head, Name, Arity),
 	predicate_property(Head, built_in).
 
 references(Required, Source) :-
@@ -397,6 +404,28 @@ head_pi(Head, Head/0) :-
 	atom(Head), !.
 head_pi(Head, Name/Arity) :-
 	compound_name_arity(Head, Name, Arity).
+
+%%	id_depends(+Vars)
+%
+%	Find source dependencies.  A source depends on another if it
+%	requires predicates that are provided by another.
+
+id_depends(Vars) :-
+	include(has_class(source), Vars, Sources),
+	compound_name_arguments(Array, a, Sources),
+	findall(dep(Depends,On,Preds),
+		depends(Array, Depends, On, Preds), Triples),
+	pp(Triples).
+
+depends(Array, Depends, On, Preds) :-
+	arg(Depends, Array, VD),
+	arg(On, Array, VO),
+	On \== Depends,
+	get_lpn(VD, DependsData),
+	get_lpn(VO, OnData),
+	ord_intersection(DependsData.xref.get(required),
+			 OnData.xref.get(defined), Preds),
+	Preds \== [].
 
 
 %%	pre_classify_source(+String, -Content, -Terms, -Class) is det.
