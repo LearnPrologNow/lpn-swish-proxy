@@ -191,7 +191,7 @@ classify_sources(DOM) :-
 	id_source_highlights(Vars),
 	id_queries(Vars),
 	id_variants(Vars),
-	id_depends(Vars),
+%	id_depends(Vars),
 	maplist(bind, Vars).
 
 pre_classify_verbs([]).
@@ -437,8 +437,7 @@ id_depends(Vars) :-
 	include(has_class(source), Vars, Sources),
 	compound_name_arguments(Array, a, Sources),
 	findall(dep(Depends,On,Preds),
-		depends(Array, Depends, On, Preds), Triples),
-	pp(Triples).
+		depends(Array, Depends, On, Preds), __Triples).
 
 depends(Array, Depends, On, Preds) :-
 	arg(Depends, Array, VD),
