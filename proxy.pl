@@ -77,6 +77,15 @@ pics(Request) :-
 	->  option(request_uri(URI), Request),
 	    download(URI, Path),
 	    http_reply_file(lpn_cache(Rest), [], Request)
+	;   option(request_uri(URI), Request),
+	    setting(lpn_home, LPNHome),
+	    atom_concat(LPNHome, URI, Source),
+	    setup_call_cleanup(
+		http_open(Source, In, [header(content_type, Type)]),
+		( format('Content-type: ~w~n~n', [Type]),
+		  copy_stream_data(In, current_output)
+		),
+		close(In))
 	).
 
 download(URI, Path) :-
