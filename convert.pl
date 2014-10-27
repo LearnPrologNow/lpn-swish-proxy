@@ -399,8 +399,12 @@ exports(Source, ExportPIs) :-
 	->  true
 	;   Required = []
 	),
-	ord_intersection(Required, XREF.defined, Recursive),
-	ord_subtract(XREF.defined, Required, NeededPIs),
+	(   Defined = XREF.get(defined)
+	->  true
+	;   Defined = []
+	),
+	ord_intersection(Required, Defined, Recursive),
+	ord_subtract(Defined, Required, NeededPIs),
 	ord_union(Recursive, NeededPIs, ExportPIs).
 
 tag_variants([], _).
