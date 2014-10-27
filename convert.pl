@@ -459,15 +459,30 @@ depends(Array, Depends, On, Preds) :-
 
 pre_classify_source(C, [C], Terms, source) :-
 	source_terms(C, Terms),
-	Terms \= [?-_|_], !.
+	Terms \= [?-_|_],
+	xref_terms(Terms, XREF),
+	\+ ( member(Defined, XREF.get(defined)),
+	     forbidden_defined(Defined)
+	   ), !.
 pre_classify_source(C, Queries, Terms, query) :-
 	string_codes(C, Codes),
 	phrase(queries(Queries, Terms), Codes),
 	\+ (Queries = [S], string(S)), !.	% did annotate something.
 pre_classify_source(C, [C], [Term], maybe_query) :-
 	catch(term_string(Term, C), _, fail),
-	\+ answer_term(Term).
+	\+ noquery(Term).
 pre_classify_source(C, [C], [], verbatim).
+
+forbidden_defined('/'/2).
+forbidden_defined('='/2).
+
+%%	noquery(+Term)
+%
+%	Term is not a sensible query.
+
+noquery(NotCallable) :- \+ callable(NotCallable), !, fail.
+noquery(X) :- answer_term(X), !.
+noquery(Name/Arity) :- atom(Name), integer(Arity).
 
 answer_term(Var) :- var(Var), !, fail.
 answer_term(Var = _Value) :- var(Var), !.
@@ -545,7 +560,7 @@ query_list(ContentList) :-
 query_element(Element) :-
 	convert_source(Element, String),
 	catch(term_string(Term, String), _, fail),
-	\+ answer_term(Term).
+	\+ noquery(Term).
 
 
 		 /*******************************
