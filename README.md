@@ -11,6 +11,10 @@
     ?- local.
     ?- server(8080).
 
+## Use local SWISH at port 3050 rather than swish.swi-prolog.org
+
+    ?- local_swish(3050).
+
 ## Run as daemon
 
 As current user
