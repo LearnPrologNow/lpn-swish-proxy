@@ -21,6 +21,21 @@ div.query {
   display: inline-block;
 }
 
+div.open-prolog {
+  width: auto;
+  display: inline-block;
+  position: relative;
+}
+
+div.open-prolog.swish {
+  width: 80%;
+}
+
+div.open-prolog div.load {
+  top: -7px;
+  right: -37px;
+}
+
 div.source.swish, div.query.swish {
   padding: 8px 8px;
 }
@@ -49,7 +64,9 @@ div.query div.load {
  top: -5px;
 }
 
-div.source.swish div.load, div.query.swish div.load {
+div.source.swish div.load,
+div.query.swish div.load,
+div.open-prolog.swish div.load {
   background-image: url("close.png");
 }
 

@@ -24,27 +24,41 @@
 
 	data.swishURL = options.swish || SWISH;
 
-	if ( elem.hasClass("source") ) {
+	function appendRunButtonTo(obj) {
+	  obj.append("<div class='load'></div>")
+	     .on("click", "div.load", function() {
+	       toggleSWISH(elem);
+	     });
+
+	  return obj;
+	}
+
+	if ( elem.hasClass("exercise") ) {
+	  currentSource = null;		/* make them independent */
+	  if ( elem.find(".swish").length == 0 ) {
+	    data.queries = [];
+	    data.source = "";
+	    var run = $("<div>"+
+			  "<span>Run Prolog Now!</span>"+
+			"</div>");
+	    elem.append(run);
+	    run.wrap("<div class='open-prolog'></div>");
+	    elem = run;
+	    appendRunButtonTo(elem.parent());
+	  }
+	} else if ( elem.hasClass("source") ) {
 	  data.queries = [];
 	  data.source = elem.text();
 	  currentSource = data;
 	  elem.wrap("<div class='source'></div>");
-	  elem.parent()
-	    .append("<div class='load'></div>")
-	    .on("click", "div.load", function() {
-	      toggleSWISH(elem);
-	    });
+	  appendRunButtonTo(elem.parent());
 	} else if ( elem.hasClass("query") ) {
 	  if ( currentSource ) {
 	    currentSource.queries.push(elem.text(), "\n");
 	  } else {
 	    data.queries = [elem.text(), "\n"];
 	    elem.wrap("<div class='query'></div>");
-	    elem.parent()
-	      .append("<div class='load'></div>")
-	      .on("click", "div.load", function() {
-	        toggleSWISH(elem);
-	      });
+	    appendRunButtonTo(elem.parent());
 	  }
 	} else if ( elem.hasClass("query-list") ) {
 	  if ( currentSource ) {
@@ -128,7 +142,6 @@
 
     return text+"\n";
   }
-
 
   /**
    * <Class description>
