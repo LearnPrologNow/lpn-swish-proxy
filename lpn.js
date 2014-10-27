@@ -36,8 +36,6 @@
 	if ( elem.hasClass("exercise") ) {
 	  currentSource = null;		/* make them independent */
 	  if ( elem.find(".swish").length == 0 ) {
-	    data.queries = [];
-	    data.source = "";
 	    var run = $("<div>"+
 			  "<span>Run Prolog Now!</span>"+
 			"</div>");
@@ -61,13 +59,21 @@
 	    appendRunButtonTo(elem.parent());
 	  }
 	} else if ( elem.hasClass("query-list") ) {
-	  if ( currentSource ) {
+	  function addQueries(list) {
 	    elem.children().each(function() {
 	      var li = $(this);
-	      currentSource.queries.push(makeQuery(li.text()));
+	      list.push(makeQuery(li.text()));
 	    });
 	  }
 
+	  if ( currentSource ) {
+	    addQueries(currentSource.queries);
+	  } else {
+	    data.queries = [];
+	    addQueries(data.queries);
+	    elem.wrap("<div class='query'></div>");
+	    appendRunButtonTo(elem.parent());
+	  }
 	}
 	elem.data(pluginName, data);	/* store with element */
       });
@@ -105,7 +111,7 @@
 	query += q+"code="+encodeURIComponent(data.source);
 	q = "&";
       }
-      if ( data.queries.length > 0 ) {
+      if ( data.queries && data.queries.length > 0 ) {
 	query += q + "examples=" + encodeURIComponent(data.queries.join(""));
 	q = "&";
       }
@@ -134,7 +140,7 @@
    * @returns {String} Query text, which starts with ?- and ends in .\n
    */
   function makeQuery(text) {
-    text = text.trim();
+    text = text.trim().replace(/\s\s+/g, " ");
     if ( ! /^\?-/.test(text) )
       text = "?- "+text;
     if ( ! /\.$/.test(text) )
