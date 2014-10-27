@@ -81,6 +81,14 @@ convert(element(body, Args, C0),
 	append(C1,
 	       [ element(script, [], [Script])
 	       ], C).
+convert(element(ol, Attrs0, C),
+	element(ol, Attrs, C)) :-
+	query_list(C), !,
+	(   select(class=Class0, Attrs0, Attrs1)
+	->  atom_concat(Class0, ' swish query-list', Class),
+	    Attrs = [class=Class|Attrs1]
+	;   Attrs = [class=' swish query-list'|Attrs0]
+	).
 convert(element(div, Attrs0, C0), Source) :-
 	select(class=fancyvrb, Attrs0, Attrs),
 	(   convert_source(C0, String)
@@ -507,6 +515,22 @@ read_stream_to_terms(Term, _, []) :-
 read_stream_to_terms(Term, Stream, [Term|Rest]) :-
 	read(Stream, T0),
 	read_stream_to_terms(T0, Stream, Rest).
+
+%%	query_list(+ContentList) is semidet.
+%
+%	True if ContentList is a <li> list which consist of mostly
+%	query-like terms.
+
+query_list(ContentList) :-
+	partition(query_element, ContentList, Queries, NonQueries),
+	length(Queries, QLen),
+	length(NonQueries, NQLen),
+	QLen >= NQLen.
+
+query_element(Element) :-
+	convert_source(Element, String),
+	catch(term_string(Term, String), _, fail),
+	\+ answer_term(Term).
 
 
 		 /*******************************

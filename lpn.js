@@ -46,8 +46,15 @@
 	        toggleSWISH(elem);
 	      });
 	  }
-	}
+	} else if ( elem.hasClass("query-list") ) {
+	  if ( currentSource ) {
+	    elem.children().each(function() {
+	      var li = $(this);
+	      currentSource.queries.push(makeQuery(li.text()));
+	    });
+	  }
 
+	}
 	elem.data(pluginName, data);	/* store with element */
       });
     }
@@ -108,6 +115,20 @@
       currentSWISHElem = elem;
     }
   }
+
+  /**
+   * @returns {String} Query text, which starts with ?- and ends in .\n
+   */
+  function makeQuery(text) {
+    text = text.trim();
+    if ( ! /^\?-/.test(text) )
+      text = "?- "+text;
+    if ( ! /\.$/.test(text) )
+      text = text + ".";
+
+    return text+"\n";
+  }
+
 
   /**
    * <Class description>
