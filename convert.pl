@@ -11,6 +11,7 @@
 :- use_module(library(dcg/basics)).
 :- use_module(library(settings)).
 :- use_module(library(ordsets)).
+:- use_module(library(xpath)).
 
 :- setting(swish, atom,
 	   'http://swish.swi-prolog.org/',
@@ -81,14 +82,18 @@ convert(element(body, Args, C0),
 	append(C1,
 	       [ element(script, [], [Script])
 	       ], C).
-convert(element(ol, Attrs0, C),
-	element(ol, Attrs, C)) :-
-	query_list(C), !,
-	(   select(class=Class0, Attrs0, Attrs1)
-	->  atom_concat(Class0, ' swish query-list', Class),
-	    Attrs = [class=Class|Attrs1]
-	;   Attrs = [class=' swish query-list'|Attrs0]
-	).
+convert(element(ol, Attrs0, C0),
+	element(ol, Attrs, C1)) :-
+	query_list(C0), !,
+	convert_dom(C0, C1),
+	dom_add_class(Attrs0, 'swish query-list', Attrs).
+convert(element(div, Attrs0, C0),
+	element(div, Attrs, C1)) :-
+	memberchk(class=newtheorem, Attrs0),
+	xpath_chk(element(div, Attrs0, C0), p/span, Span),
+	xpath_chk(Span, //strong(text), 'Exercise'), !,
+	convert_dom(C0, C1),
+	dom_add_class(Attrs0, 'swish exercise', Attrs).
 convert(element(div, Attrs0, C0), Source) :-
 	select(class=fancyvrb, Attrs0, Attrs),
 	(   convert_source(C0, String)
@@ -99,6 +104,12 @@ convert(element(div, Attrs0, C0), Source) :-
 	;   debug(lpn(convert), 'Failed to convert ~p', [C0]),
 	    fail
 	).
+
+dom_add_class(Attrs0, Class, Attrs) :-
+	select(class=Class0, Attrs0, Attrs1), !,
+	atomic_list_concat([Class0, Class], ' ', NewClass),
+	Attrs = [class=NewClass|Attrs1].
+dom_add_class(Attrs0, Class, [class=Class|Attrs0]).
 
 %%	convert_source(+Content, -String) is det.
 %
