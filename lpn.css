@@ -73,6 +73,13 @@ div.open-prolog.swish div.load {
 div.ui-resizable-s {
 }
 
+div.content {
+  background-image: url("testing-version.png");
+  background-size: 50%;
+}
+
+
+
 		 /*******************************
 		 *	  MODAL DIALOGUE	*
 		 *******************************/
