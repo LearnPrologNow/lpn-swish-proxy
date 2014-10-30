@@ -73,6 +73,32 @@ div.open-prolog.swish div.load {
 div.ui-resizable-s {
 }
 
+
+		 /*******************************
+		 *	    DISCLAIMER		*
+		 *******************************/
+
+div.swish-disclaimer {
+  font-size: 80%;
+  font-family:Helvetica,sans-serif;
+  color: #444;
+  padding: 0px 5%;
+}
+
+div.github {
+  padding-top: 5px;
+  text-align: center;
+  margin: auto;
+}
+
+div.github > span {
+}
+
+div.github iframe {
+  vertical-align: top;
+  border: 0px;
+}
+
 div.content {
   background-image: url("testing-version.png");
   background-size: 50%;

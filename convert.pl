@@ -4,6 +4,7 @@
 	  ]).
 :- use_module(library(sgml)).
 :- use_module(library(sgml_write)).
+:- use_module(library(http/html_write)).
 :- use_module(library(lists)).
 :- use_module(library(debug)).
 :- use_module(library(apply)).
@@ -87,6 +88,36 @@ convert(element(ol, Attrs0, C0),
 	query_list(C0), !,
 	convert_dom(C0, C1),
 	dom_add_class(Attrs0, 'swish query-list', Attrs).
+convert(element(div, Attrs, []),
+	element(div, Attrs, C)) :-
+	memberchk(class=coloredbar, Attrs), !,
+	C = {|html||
+<div class="swish-disclaimer">
+This version of Learn Prolog Now! embeds <a href="http://swish.swi-prolog.org">
+<span style="color:darkblue">SWI</span><span style="color:maroon">SH</span></a>,
+<a href="http://www.swi-prolog.org">SWI-Prolog</a> for SHaring.
+The current version rewrites the Learn Prolog Now! HTML on the fly, recognising
+source code and example queries.  It is not yet good at recognising the relations
+between source code fragments and queries.  Also Learn Prolog Now! needs some
+updating to be more compatible with SWI-Prolog.  All sources are on GitHub:
+
+<div class="github">
+<span>LearnPrologNow</span>
+
+<iframe class="github-btn" src="http://ghbtns.com/github-btn.html?user=LearnPrologNow&amp;repo=lpn&amp;type=fork&amp;count=true" width="102" height="20" title="Fork on GitHub"></iframe>
+
+<span>LPN SWISH Proxy</span>
+
+<iframe class="github-btn" src="http://ghbtns.com/github-btn.html?user=LearnPrologNow&amp;repo=lpn-swish-proxy&amp;type=fork&amp;count=true" width="102" height="20" title="Fork on GitHub"></iframe>
+
+<span>SWISH</span>
+
+<iframe class="github-btn" src="http://ghbtns.com/github-btn.html?user=SWI-Prolog&amp;repo=swish&amp;type=fork&amp;count=true" width="102" height="20" title="Fork on GitHub"></iframe>
+</div>
+</div>
+	    |}.
+
+
 convert(element(div, Attrs0, C0),
 	element(div, Attrs, C1)) :-
 	memberchk(class=newtheorem, Attrs0),
