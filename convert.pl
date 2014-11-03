@@ -510,6 +510,8 @@ forbidden_defined('='/2).
 %
 %	Term is not a sensible query.
 
+noquery(Var) :- var(Var), !.
+noquery([_|_]) :- !, fail.
 noquery(NotCallable) :- \+ callable(NotCallable), !, fail.
 noquery(X) :- answer_term(X), !.
 noquery(Name/Arity) :- atom(Name), integer(Arity).
