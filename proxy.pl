@@ -1,5 +1,5 @@
 :- module(lpn_proxy,
-	  [ local/0,
+	  [ local_lpn/1,		% +Port
 	    server/1			% +Port
 	  ]).
 :- use_module(convert).
@@ -59,8 +59,9 @@ user:file_search_path(lpn_cache, lpn(cache)).
 
 % a convenience predicate to override where you get the
 % LPN HTML pages from.
-local :-
-	set_setting(lpn_home, 'http://localhost:8000').
+local_lpn(Port) :-
+	format(atom(URL), 'http://localhost:~w', [Port]),
+	set_setting(lpn_home, URL).
 
 % this defines the handlers.
 % redirect bare http://localhost:4000/ type request to
