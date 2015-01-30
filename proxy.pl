@@ -81,24 +81,34 @@ server(Port) :-
 		    [ port(Port)
 		    ]).
 
+% this is where the fun happens. We SWISH-ize everything served by
+%  /lpnpage.php
 lpn(Request) :-
+	% get the PageID from the request
 	option(request_uri(URI), Request),
 	pageid(URI, PageID),
 	(   absolute_file_name(lpn_cache(PageID), Path,
 			       [access(read), file_errors(fail)])
-	->  reply_from_file(Path)
+	->  reply_from_file(Path) % if its in the cache SWISHize and send it
 	;   absolute_file_name(lpn_cache(PageID), Path,
 			       [access(write), file_errors(fail)])
-	->  download(URI, Path),
+	->  download(URI, Path),  % otherwise download, SWISHize and send it
 	    reply_from_file(Path)
-	;   setting(lpn_home, LPNHome),
-	    atom_concat(LPNHome, URI, Source),
+	;   setting(lpn_home, LPNHome), % and if we cant cache, SWISHize inline
+	    atom_concat(LPNHome, URI, Source), % as it comes from source
 	    setup_call_cleanup(
 		http_open(Source, In, []),
 		reply_from_stream(In),
 		close(In))
 	).
 
+%%	pageid(+URI, -PageID) is semidet
+%
+%	succeeds binding PageID to the value associated with the pageid
+%	key in the query string
+%	or fails if thats impossible
+%	URI must be an atom, codes, or a string
+%
 pageid(URI, PageID) :-
 	uri_components(URI, Components),
 	uri_data(search, Components, Search),
@@ -106,12 +116,19 @@ pageid(URI, PageID) :-
 	uri_query_components(Search, Query),
 	memberchk(pageid=PageID, Query).
 
+%%	reply_from_file(+Path:text) is det
+%
+%	given an abstract file path SWISHize it and
+%	send as httpResponse
+%
 reply_from_file(Path) :-
 	setup_call_cleanup(
 	    open(Path, read, In),
 	    reply_from_stream(In),
 	    close(In)).
 
+% I think this just proxies the request normal fashion,
+% caching as it goes but doesn't swish-ize
 pics(Request) :-
 	option(path_info(Rest), Request),
 	(   absolute_file_name(lpn_cache(Rest), _,
@@ -133,6 +150,12 @@ pics(Request) :-
 		close(In))
 	).
 
+%%	download(+URI:text, +Path:text) is det
+%
+%	change the source domain for the current URI
+%	to lpn_home and download that into the file
+%	Path
+%
 download(URI, Path) :-
 	setting(lpn_home, LPNHome),
 	atom_concat(LPNHome, URI, Source),
@@ -144,6 +167,10 @@ download(URI, Path) :-
 		close(Out)),
 	    close(In)).
 
+%%	reply_from_stream(+In:stream) is det
+%
+%	read the input stream In, SWISH-ize it,
+%	and send as the httpresponse
 reply_from_stream(In) :-
 	format('Content-type: text/html~n~n'),
 	convert_lpn(In, current_output).

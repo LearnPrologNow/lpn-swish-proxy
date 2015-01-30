@@ -25,9 +25,22 @@ local_swish(Port) :-
 :- debug(lpn(convert)).
 :- debug(lpn(_)).
 
+%%	convert_lpn(+In:Stream, +Out:stream) is det
+%
+% SWISHize In as it's copied to Out
+%
 convert_lpn(In, Out) :-
+	% the \+ \+ enforces determinacy
 	\+ \+ convert_lpn2(In, Out).
 
+%%	convert_lpn2(+In:Stream, +Out:stream) is nondet
+%
+% SWISHize In as it's copied to Out
+%
+% Method used is to read in via load_html, which creates
+% a tree structure DOM, convert parts of the DOM that
+% are to be SWISHized - @see convert/2
+% and
 convert_lpn2(In, Out) :-
 	load_html(In, DOM,
 		  [ syntax_errors(quiet),
