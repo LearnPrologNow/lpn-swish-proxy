@@ -13,22 +13,67 @@
 /** <module> Learn Prolog Now proxy
 
 This module implements a simple proxy that rewrites LPN to link to SWISH
+
+Overall what this does:
+
+Say there's some HTML page on web
+with prolog code examples in it
+
+This program serves that web page on the port specified in server,
+at the same relative URI as the source,
+
+so, if the original is at
+http://www.learnprolognow.org/lpnpage.php?pagetype=html&pageid=lpn-htmlse1
+
+and we started the proxy by consulting this file and querying
+server(4000). then we can see the same page at
+
+http://localhost:4000/lpnpage.php?pagetype=html&pageid=lpn-htmlse1
+
+BUT, this program modifies anything it sees as a Prolog code example in
+the original page to be a SWISH console in the process.
+
+Additionally, this program serves a few helper files needed by the
+SWISH console.
+
+It makes a lot of assumptions about what the website it's proxying is
+like, both in URI structure and in what prolog code will look like.
+That's OK, it's just to proxy a single site.
+
 */
 
+% the location lpn is where files like lpn.css that are needed
+% to swish-ize are located
 user:file_search_path(lpn, .).
+% I'd expect this directory to be in the source tree
+% but it's not there.  I've now checked it in.
 user:file_search_path(lpn_cache, lpn(cache)).
 
+% by 'location from which we proxy' he means the location
+% we get the original, un-swishized html pages from
+% this defines a setting named lpn_home, like most settings,
+% used for configuration
 :- setting(lpn_home, atom,
 	   'http://www.learnprolognow.org',
 	   'The location from which we proxy').
 
+% a convenience predicate to override where you get the
+% LPN HTML pages from.
 local :-
 	set_setting(lpn_home, 'http://localhost:8000').
 
+% this defines the handlers.
+% redirect bare http://localhost:4000/ type request to
+% the root of the lpn pages
 :- http_handler('/', http_redirect(moved_temporary,
 				   '/lpnpage.php?pageid=online'), []).
+% this serves all the little extra files like lpn.js, lpn.css etc.
 :- http_handler('/', serve_files_in_directory(lpn), [prefix]).
+% this is where the meat of the action is, anything that goes to
+% lpnpage.php is responded to by the predicate lpn/1
 :- http_handler('/lpnpage.php', lpn, []).
+% this serves some more of the support structure
+% any URI that starts /html/ is served by the predicate pics
 :- http_handler('/html/', pics, [prefix]).
 
 server(Port) :-
