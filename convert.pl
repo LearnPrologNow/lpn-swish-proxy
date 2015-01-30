@@ -39,8 +39,8 @@ convert_lpn(In, Out) :-
 %
 % Method used is to read in via load_html, which creates
 % a tree structure DOM, convert parts of the DOM that
-% are to be SWISHized - @see convert/2
-% and
+% are to be SWISHized - @see convert_dom/2 and convert/2
+%
 convert_lpn2(In, Out) :-
 	load_html(In, DOM,
 		  [ syntax_errors(quiet),
@@ -56,6 +56,12 @@ convert_lpn2(In, Out) :-
 		close(Stream))
 	).
 
+%%	convert_dom(+DOM0, -DOM) is semidet
+%
+%	convert a DOM or sub-DOM
+%	if convert/2 can convert it, then it's a
+%	structure to be modified. If not, we recursively
+%	try to convert
 convert_dom(DOM0, DOM) :-
 	convert(DOM0, DOM), !.
 convert_dom(CDATA0, CDATA) :-
@@ -75,6 +81,8 @@ convert_dom(element(E,A,C0), element(E,A,C)) :-
 %	  - Extend the head with our dependencies
 %	  - Extend the body to call the `swish` jQuery plugin
 %	  - Classify sources in `fancyvrb` environments (verbatim)
+%
+%	  'fancyvrb' is a class in the original sources
 
 convert(element(head, Args, C0),
 	element(head, Args,
@@ -476,6 +484,9 @@ head_pi(Head, Name/Arity) :-
 %
 %	Find source dependencies.  A source depends on another if it
 %	requires predicates that are provided by another.
+%
+%	note: I suspect Jan never got this working - Annie
+%
 
 id_depends(Vars) :-
 	include(has_class(source), Vars, Sources),
