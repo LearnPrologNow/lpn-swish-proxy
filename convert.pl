@@ -190,6 +190,7 @@ content_text(element(br, _, _)) --> !,
 content_text(element(_, _, Content)) -->
 	content_text(Content).
 
+back_to_ascii(0x0027, 0'\') :- !.               % This fixes the error regarding the ' in the Prolog Code to be entered into SWISH
 back_to_ascii(0x00A0, 0'\s) :- !.		% '
 back_to_ascii(0x2019, 0'\') :- !.		% Unicode right single quote
 back_to_ascii(X, X).
