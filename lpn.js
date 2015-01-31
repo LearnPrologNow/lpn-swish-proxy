@@ -84,7 +84,7 @@
 
   function toggleSWISH(elem) {
     function attr(name, value) {
-      content.push(" ", name, "='", value.replace("'","&apos;","g"), "'");
+      content.push(" ", name, '="', value, '"');
     }
 
     var data    = elem.data(pluginName);
