@@ -41,13 +41,18 @@ convert_lpn(In, Out) :-
 % a tree structure DOM, convert parts of the DOM that
 % are to be SWISHized - @see convert_dom/2 and convert/2
 %
+
+
+
+
 convert_lpn2(In, Out) :-
 	load_html(In, DOM,
 		  [ syntax_errors(quiet),
 		    max_errors(-1)
 		  ]),
 	convert_dom(DOM, DOM1),
-	classify_sources(DOM1),
+	sort_dom_lpn(DOM1, DOM2),
+	classify_sources(DOM2),
 	(   is_stream(Out)
 	->  html_write(Out, DOM1, [])
 	;   setup_call_cleanup(
@@ -55,6 +60,37 @@ convert_lpn2(In, Out) :-
 		html_write(Stream, DOM1, []),
 		close(Stream))
 	).
+
+
+
+list_to_strings(List, Output):-
+	fix_strings(List, "", Output).
+list_to_strings([H | T], In, Out) :-
+	string_concat(H, '.', NewString),
+	(
+	    NewString \= "."
+	->  string_concat(In, NewString, Final_String),
+	    list_to_strings(T, Final_String, Out)
+	;   list_to_strings(T, In, Out)
+	).
+
+list_to_strings([], In, Out) :-
+	Out = In.
+
+sort_lpn_codes([]).
+
+sort_lpn_codes(Input, Output) :-
+	split_string(Input, '.', '', SplitList),
+	sort(SplitList, NewList),
+	list_to_string(NewList, Output).
+
+sort_dom_lpn(Converted, Output) :-
+	term_attvars(Converted, Vars),
+	get_lpn(Vars, LPN),
+	sort_lpn_codes(LPN.text, OutputLPN),
+	put_lpn(Vars, OutputLPN),
+	Output = Converted.
+
 
 %%	convert_dom(+DOM0, -DOM) is semidet
 %
@@ -236,7 +272,6 @@ leading_spaces(_, N, N).
 %	  - Indentify queries
 %	    - Query needs only built-ins
 %	    - Query needs sources S1, S2, ...
-
 classify_sources(DOM) :-
 	term_attvars(DOM, Vars),
 	pre_classify_verbs(Vars),
