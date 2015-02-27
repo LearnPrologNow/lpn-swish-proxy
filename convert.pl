@@ -78,7 +78,7 @@ list_to_strings([H | T], In, Out) :-
 list_to_strings([], In, Out) :-
 	Out = In.
 
-%% sort_lpn_codes([]).
+% sort_lpn_codes([]).
 
 sort_lpn_codes(Input, Output) :-
 	split_string(Input, '.', '', SplitList),
@@ -91,6 +91,8 @@ sort_dom_lpn(Converted, Output) :-
 	sort_lpn_codes(LPN.text, OutputLPN),
 	put_lpn(Vars, OutputLPN),
 	Output = Converted.
+sort_dom_lpn(X, X).  % AO 2/26 to deal with files with no prolog source dcode in them
+
 
 
 %%	convert_dom(+DOM0, -DOM) is semidet
