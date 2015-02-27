@@ -78,7 +78,7 @@ list_to_strings([H | T], In, Out) :-
 list_to_strings([], In, Out) :-
 	Out = In.
 
-%% sort_lpn_codes([]).
+% sort_lpn_codes([]).
 
 sort_lpn_codes(Input, Output) :-
 	split_string(Input, '.', '', SplitList),
