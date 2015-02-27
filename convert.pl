@@ -85,11 +85,20 @@ sort_lpn_codes(Input, Output) :-
 	sort(SplitList, NewList),
 	list_to_strings(NewList, Output).
 
+sort_lpn([]).
+
+sort_lpn([H | T]) :-
+	get_lpn(H, LPN),
+	sort_lpn_codes(LPN.text, OutputLPN),
+	put_lpn(H, OutputLPN),
+	sort_lpn(T).
+
 sort_dom_lpn(Converted, Output) :-
 	term_attvars(Converted, Vars),
-	get_lpn(Vars, LPN),
-	sort_lpn_codes(LPN.text, OutputLPN),
-	put_lpn(Vars, OutputLPN),
+	%put_lpn(Vars, LPN),
+	%sort_lpn_codes(LPN.text, OutputLPN),
+	%put_lpn(Vars, OutputLPN),
+	sort_lpn(Vars),
 	Output = Converted.
 sort_dom_lpn(X, X).  % AO 2/26 to deal with files with no prolog source dcode in them
 
