@@ -64,7 +64,8 @@ convert_lpn2(In, Out) :-
 
 
 list_to_strings(List, Output):-
-	fix_strings(List, "", Output).
+	list_to_strings(List, "", Output).
+
 list_to_strings([H | T], In, Out) :-
 	string_concat(H, '.', NewString),
 	(
@@ -77,12 +78,12 @@ list_to_strings([H | T], In, Out) :-
 list_to_strings([], In, Out) :-
 	Out = In.
 
-sort_lpn_codes([]).
+%% sort_lpn_codes([]).
 
 sort_lpn_codes(Input, Output) :-
 	split_string(Input, '.', '', SplitList),
 	sort(SplitList, NewList),
-	list_to_string(NewList, Output).
+	list_to_strings(NewList, Output).
 
 sort_dom_lpn(Converted, Output) :-
 	term_attvars(Converted, Vars),
