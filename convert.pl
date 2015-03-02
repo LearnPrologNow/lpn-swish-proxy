@@ -51,8 +51,7 @@ convert_lpn2(In, Out) :-
 		    max_errors(-1)
 		  ]),
 	convert_dom(DOM, DOM1),
-	sort_dom_lpn(DOM1, DOM2),
-	classify_sources(DOM2),
+	classify_sources(DOM1),
 	(   is_stream(Out)
 	->  html_write(Out, DOM1, [])
 	;   setup_call_cleanup(
@@ -62,13 +61,20 @@ convert_lpn2(In, Out) :-
 	).
 
 
+%%       list_to_strings(+List:List, +Output: String) is det
+%
+%        This method takes in LPN Prolog code as List as an
+%        input aragument and converts it into a String
 
 list_to_strings(List, Output):-
 	list_to_strings(List, "", Output).
 
+
+
 list_to_strings([H | T], In, Out) :-
 	string_concat(H, '.', NewString),
 	(
+	    % This is a corner case to detect an empty string
 	    NewString \= "."
 	->  string_concat(In, NewString, Final_String),
 	    list_to_strings(T, Final_String, Out)
@@ -78,31 +84,22 @@ list_to_strings([H | T], In, Out) :-
 list_to_strings([], In, Out) :-
 	Out = In.
 
-% sort_lpn_codes([]).
+%%	sort_lpn_codes(+Input: String, Output:String) is det
+%	This method takes in LPN code as an input argument
+%	and returns an Output String which is sorted.
+%	This has been done to fix SWISH errors like:
+%	Clauses of <wizard>/1 are not together in the source-file
+%
+%
+
 
 sort_lpn_codes(Input, Output) :-
-	split_string(Input, '.', '', SplitList),
+	% Fix for the corner case where the first predicate
+	% in the source code is missing a new line character
+	string_concat('\n', Input, InputString),
+	split_string(InputString, '.', '', SplitList),
 	sort(SplitList, NewList),
 	list_to_strings(NewList, Output).
-
-sort_lpn([]).
-
-sort_lpn([H | T]) :-
-	get_lpn(H, LPN),
-	sort_lpn_codes(LPN.text, OutputLPN),
-	put_lpn(H, OutputLPN),
-	sort_lpn(T).
-
-sort_dom_lpn(Converted, Output) :-
-	term_attvars(Converted, Vars),
-	%put_lpn(Vars, LPN),
-	%sort_lpn_codes(LPN.text, OutputLPN),
-	%put_lpn(Vars, OutputLPN),
-	sort_lpn(Vars),
-	Output = Converted.
-sort_dom_lpn(X, X).  % AO 2/26 to deal with files with no prolog source dcode in them
-
-
 
 %%	convert_dom(+DOM0, -DOM) is semidet
 %
@@ -110,6 +107,7 @@ sort_dom_lpn(X, X).  % AO 2/26 to deal with files with no prolog source dcode in
 %	if convert/2 can convert it, then it's a
 %	structure to be modified. If not, we recursively
 %	try to convert
+
 convert_dom(DOM0, DOM) :-
 	convert(DOM0, DOM), !.
 convert_dom(CDATA0, CDATA) :-
@@ -196,9 +194,10 @@ convert(element(div, Attrs0, C0),
 	dom_add_class(Attrs0, 'swish exercise', Attrs).
 convert(element(div, Attrs0, C0), Source) :-
 	select(class=fancyvrb, Attrs0, Attrs),
-	(   convert_source(C0, String)
+	(   convert_source(C0, String),
+	    sort_lpn_codes(String, String1)
 	->  put_attr(Source, 'LPN',
-		     verb{text:String,
+		     verb{text:String1,
 			  attributes:Attrs,
 			  element:Source})
 	;   debug(lpn(convert), 'Failed to convert ~p', [C0]),
