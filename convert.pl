@@ -550,25 +550,63 @@ depends(Array, Depends, On, Preds) :-
 			 OnData.xref.get(defined), Preds),
 	Preds \== [].
 
+test_list -->
+	"[", anything, "].".
+
+test_list_on_newline -->
+	"\n[", anything, "].".
+
+list_with_equalto_sign -->
+	"[", anything,"=", anything, "].".
+
+list_nl_equalto_sign -->
+	"\n[", anything, "=", anything, "].".
+
+
+anything -->
+	[].
+anything -->
+	[_], anything.
+
+check_invalid([], _).
+
+check_invalid([H|T], Input):-
+	string_to_list(Input,X1),
+	(
+	phrase(H, X1, [])
+	->  noquery(Input), !
+	; check_invalid(T, Input)
+	).
 
 %%	pre_classify_source(+String, -Content, -Terms, -Class) is det.
 %
 %	Pre classification of  a  source  fragment.   Class  is  one  of
 %	=source=, =query= or =verbatim=. Terms is a list of Prolog terms
 %	found.
+%
+
+
+check_validity(Input) :-
+	Lists = [test_list, list_with_equalto_sign, test_list_on_newline,
+		  list_nl_equalto_sign],
+	check_invalid(Lists, Input).
 
 pre_classify_source(C, [C], Terms, source) :-
+	check_validity(C),
 	source_terms(C, Terms),
 	Terms \= [?-_|_],
 	xref_terms(Terms, XREF),
 	\+ ( member(Defined, XREF.get(defined)),
 	     forbidden_defined(Defined)
 	   ), !.
+
 pre_classify_source(C, Queries, Terms, query) :-
+	check_validity(C),
 	string_codes(C, Codes),
 	phrase(queries(Queries, Terms), Codes),
 	\+ (Queries = [S], string(S)), !.	% did annotate something.
 pre_classify_source(C, [C], [Term], maybe_query) :-
+	check_validity(C),
 	catch(term_string(Term, C), _, fail),
 	\+ noquery(Term).
 pre_classify_source(C, [C], [], verbatim).
