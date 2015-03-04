@@ -1,6 +1,11 @@
-wizard(ron).
-hasWand(harry).
-quidditchPlayer(harry).
-wizard(X):- hasBroom(X),
-	    hasWand(X).
-hasBroom(X):- quidditchPlayer(X).
+testerDCG -->
+	"\n[", anything, "].".
+
+anything -->
+	[].
+anything --> [_], anything.
+
+test(X) :-
+	string_to_list(X, X1),
+	phrase(testerDCG, X1, []).
+
