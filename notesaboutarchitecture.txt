@@ -1,0 +1,23 @@
+Some notes about the architecture, specifically about what changes the cse190 crew made.
+
+Hello Anne, its Peter.
+
+Sid and i came up with two fixes. The first one simply sort the query before pushing to SWISH. the second one is a DCG filter that filter out all the unwanted queries. For now, we have only fixed a few errors, but we can add more rules in the future; this will cover around 60% of the existing errors on LPN. The rest of the errors are mostly finding dependencies problems, which will require more time. The fixed version of LPN had been pushed to the testing branch of the SWISH repo.
+
+First fix:
+
+when we say sort the Dom tree, we really mean the queries attached at the bottom of Dom tree. You can see what is inside the term “Dom” if you debug Jan’s code that all verified queires are appended to the Dom tree. In line 198, we did the following.
+
+        sort_lpn_codes(String, String1), which accepts a string and return a sorted string. 
+
+This will sort the queries before attaching it to the Dom. In sort_lpn_codes, we first split the query into terms separated by “.”. Then we pass the List to list_to_string method, which concatenates all the items on the list. As the result, we have a string with terms sorted by its name.
+
+Second fix:
+
+From line 553 to 592 is our fix for errors that not executable, such as lists from 4.1. We noticed that Jan was using pre-classify source (line 594) to classify queries. So we added a method called check_validity that checks if a string contains unwanted characters, such as “[“ and “]”. we run multiple DCG rules on the input and if it pass any one of them, it calls no query() in which classifies the string as non- query. Right now we have a list that contains all the rules and iterates each DCG rule by recursively calling check_invalid. It is easy to add more DCG rules in the future.
+
+These are pretty much a summary of what we did. We did our best trying to understand our code. For now, me and Sid are very busy but we can add more fixes after our finals. Thank you again for the patient, It was a great experience working with open source project.
+
+cheers,
+
+Yik Lun Chan
