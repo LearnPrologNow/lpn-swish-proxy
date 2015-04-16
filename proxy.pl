@@ -87,6 +87,7 @@ lpn(Request) :-
 	% get the PageID from the request
 	option(request_uri(URI), Request),
 	pageid(URI, PageID),
+	check_file(lpn_cache(PageID)),
 	(   absolute_file_name(lpn_cache(PageID), Path,
 			       [access(read), file_errors(fail)])
 	->  reply_from_file(Path) % if its in the cache SWISHize and send it
@@ -127,10 +128,17 @@ reply_from_file(Path) :-
 	    reply_from_stream(In),
 	    close(In)).
 
+% Ensure that File is inside ./cache
+check_file(File) :-
+	absolute_file_name('./cache', Reserved),
+	absolute_file_name(File, Tried),
+	sub_atom(Tried, 0, _, _, Reserved).
+
 % I think this just proxies the request normal fashion,
 % caching as it goes but doesn't swish-ize
 pics(Request) :-
 	option(path_info(Rest), Request),
+	check_file(lpn_cache(Rest)),
 	(   absolute_file_name(lpn_cache(Rest), _,
 			       [access(read), file_errors(fail)])
 	->  http_reply_file(lpn_cache(Rest), [], Request)
