@@ -14,6 +14,13 @@ infrastructure to improve on that is already in place: sources and
 queries are parsed and analysed for predicates they implement and
 require.
 
+## Prerequisites
+
+You will need to install **SWI Prolog version 7 or greater** for this to
+work.  To check, run this:
+
+    % swipl --version
+
 ## Run locally
 
     % swipl proxy.pl
