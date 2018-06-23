@@ -107,6 +107,8 @@
       if ( currentSWISHElem )
 	toggleSWISH(currentSWISHElem);
 
+      query += q + "restore=false";
+      q = "&";
       if ( data.source ) {
 	query += q+"code="+encodeURIComponent(data.source);
 	q = "&";
