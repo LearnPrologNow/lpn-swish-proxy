@@ -11,7 +11,7 @@
   var pluginName = 'LPN';
   var currentSWISHElem = null;
 
-  var SWISH = "http://swish.swi-prolog.org/";
+  var SWISH = "https://swish.swi-prolog.org/";
 
   /** @lends $.fn.LPN */
   var methods = {
@@ -107,6 +107,8 @@
       if ( currentSWISHElem )
 	toggleSWISH(currentSWISHElem);
 
+      query += q + "restore=false";
+      q = "&";
       if ( data.source ) {
 	query += q+"code="+encodeURIComponent(data.source);
 	q = "&";

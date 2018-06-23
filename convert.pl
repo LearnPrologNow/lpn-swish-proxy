@@ -15,7 +15,7 @@
 :- use_module(library(xpath)).
 
 :- setting(swish, atom,
-	   'http://swish.swi-prolog.org/',
+	   'https://swish.swi-prolog.org/',
 	   'SWISH server url').
 
 local_swish(Port) :-
