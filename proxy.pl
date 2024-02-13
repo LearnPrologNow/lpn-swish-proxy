@@ -99,7 +99,7 @@ lpn(Request) :-
 	;   setting(lpn_home, LPNHome), % and if we cant cache, SWISHize inline
 	    atom_concat(LPNHome, URI, Source), % as it comes from source
 	    setup_call_cleanup(
-		http_open(Source, In, []),
+		http_open(Source, In, [connection('Keep-alive')]),
 		reply_from_stream(In),
 		close(In))
 	).
@@ -152,7 +152,7 @@ pics(Request) :-
 	    setting(lpn_home, LPNHome),
 	    atom_concat(LPNHome, URI, Source),
 	    setup_call_cleanup(
-		http_open(Source, In, [header(content_type, Type)]),
+		http_open(Source, In, [connection('Keep-alive'),header(content_type, Type)]),
 		( format('Content-type: ~w~n~n', [Type]),
 		  copy_stream_data(In, current_output)
 		),
@@ -169,7 +169,7 @@ download(URI, Path) :-
 	setting(lpn_home, LPNHome),
 	atom_concat(LPNHome, URI, Source),
 	setup_call_cleanup(
-	    http_open(Source, In, []),
+	    http_open(Source, In, [connection('Keep-alive')]),
 	    setup_call_cleanup(
 		open(Path, write, Out, [type(binary)]),
 		copy_stream_data(In, Out),
