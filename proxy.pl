@@ -10,6 +10,11 @@
 :- use_module(library(http/http_server_files)).
 :- use_module(library(http/http_open)).
 :- use_module(library(http/http_error)).
+:- use_module(library(aggregate)).
+:- use_module(library(apply)).
+:- use_module(library(uri)).
+:- use_module(library(http/http_json)).
+:- use_module(library(http/http_stream)).
 
 /** <module> Learn Prolog Now proxy
 
@@ -77,6 +82,8 @@ local_lpn(Port) :-
 % this serves some more of the support structure
 % any URI that starts /html/ is served by the predicate pics
 :- http_handler('/html/', pics, [prefix]).
+% serve /health
+:- http_handler('/health', health, []).
 
 server(Port) :-
 	http_server(http_dispatch,
@@ -184,3 +191,42 @@ download(URI, Path) :-
 reply_from_stream(In) :-
 	format('Content-type: text/html~n~n'),
 	convert_lpn(In, current_output).
+
+
+%%	health(+Request)
+%
+%	HTTP handler that replies with the overall health of the server
+
+health(_Request) :-
+	get_server_health(Health),
+	reply_json(Health).
+
+get_server_health(Health) :-
+	findall(Key-Value, health(Key, Value), Pairs),
+	dict_pairs(Health, health, Pairs).
+
+health(up, true).
+health(uptime, Time) :-
+	get_time(Now),
+	(   http_server_property(_, start_time(StartTime))
+	->  Time is round(Now - StartTime)
+	).
+health(requests, RequestCount) :-
+	cgi_statistics(requests(RequestCount)).
+health(bytes_sent, BytesSent) :-
+	cgi_statistics(bytes_sent(BytesSent)).
+health(open_files, Streams) :-
+	aggregate_all(count, N, stream_property(_, file_no(N)), Streams).
+health(loadavg, LoadAVG) :-
+	catch(setup_call_cleanup(
+		  open('/proc/loadavg', read, In),
+		  read_string(In, _, String),
+		  close(In)),
+	      _, fail),
+	split_string(String, " ", " ", [One,Five,Fifteen|_]),
+	maplist(number_string, LoadAVG, [One,Five,Fifteen]).
+:- if(current_predicate(malloc_property/1)).
+health(heap, json{inuse:InUse, size:Size}) :-
+	malloc_property('generic.current_allocated_bytes'(InUse)),
+	malloc_property('generic.heap_size'(Size)).
+:- endif.
