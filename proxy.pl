@@ -54,7 +54,8 @@ user:file_search_path(lpn_cache, lpn(cache)).
 % this defines a setting named lpn_home, like most settings,
 % used for configuration
 :- setting(lpn_home, atom,
-	   'http://www.learnprolognow.org',
+%	   'https://www.learnprolognow.org',
+	   'https://www.let.rug.nl/bos/lpn/',
 	   'The location from which we proxy').
 
 % a convenience predicate to override where you get the
