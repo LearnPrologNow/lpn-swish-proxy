@@ -31,8 +31,7 @@ This program serves that web page on the port specified in server,
 at the same relative URI as the source,
 
 so, if the original is at
-http://www.learnprolognow.org/lpnpage.php?pagetype=html&pageid=lpn-htmlse1
-
+https://www.learnprolognow.org/lpnpage.php?pagetype=html&pageid=lpn-htmlse1
 and we started the proxy by consulting this file and querying
 server(4000). then we can see the same page at
 
