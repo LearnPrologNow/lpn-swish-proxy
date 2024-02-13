@@ -9,14 +9,7 @@
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_server_files)).
 :- use_module(library(http/http_open)).
-
-:- current_prolog_flag(version, V), 
-    V >= 70200; 
-    format('You need at least SWI-Prolog version 7.2.0 to run this -- hit <enter> to halt.~n', []), 
-    % pause here so windows users will see the message before the
-    % console window closes 
-    get0(_), 
-    halt(1).
+:- use_module(library(http/http_error)).
 
 /** <module> Learn Prolog Now proxy
 
