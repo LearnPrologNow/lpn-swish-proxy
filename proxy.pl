@@ -82,8 +82,6 @@ local_lpn(Port) :-
 % this serves some more of the support structure
 % any URI that starts /html/ is served by the predicate pics
 :- http_handler('/html/', pics, [prefix]).
-% serve /health
-:- http_handler('/health', health, []).
 
 server(Port) :-
 	http_server(http_dispatch,
@@ -192,6 +190,13 @@ reply_from_stream(In) :-
 	format('Content-type: text/html~n~n'),
 	convert_lpn(In, current_output).
 
+:- if(exists_source(library(http/http_server_health))).
+:- use_module(library(http/http_server_health)).
+:- set_setting_default(http:cors, [*]).
+:- else.
+
+% serve /health
+:- http_handler('/health', health, []).
 
 %%	health(+Request)
 %
@@ -230,3 +235,4 @@ health(heap, json{inuse:InUse, size:Size}) :-
 	malloc_property('generic.current_allocated_bytes'(InUse)),
 	malloc_property('generic.heap_size'(Size)).
 :- endif.
+:- endif. % not library(http/http_server_health)
